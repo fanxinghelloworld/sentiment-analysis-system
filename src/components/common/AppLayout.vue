@@ -11,7 +11,7 @@
           router
           class="nav-menu"
         >
-          <el-menu-item index="/dashboard">
+          <el-menu-item index="/dashboard/fullscreen" @click="handleDashboardClick">
             <el-icon><DataAnalysis /></el-icon>
             <span>实时大屏</span>
           </el-menu-item>
@@ -58,6 +58,21 @@ const unhandledCount = computed(() => warningStore.unhandledCount)
 
 const handleWarningClick = () => {
   router.push('/warning')
+}
+
+const handleDashboardClick = (e: MouseEvent) => {
+  // 阻止默认的路由跳转
+  e.preventDefault()
+
+  // 在新窗口打开全屏大屏
+  const width = window.screen.availWidth
+  const height = window.screen.availHeight
+
+  window.open(
+    '/dashboard/fullscreen',
+    '_blank',
+    `width=${width},height=${height},left=0,top=0,fullscreen=yes,toolbar=no,menubar=no,location=no,status=no`
+  )
 }
 </script>
 

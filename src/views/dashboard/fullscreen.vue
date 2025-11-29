@@ -1,221 +1,223 @@
 <template>
-  <div class="dashboard-container">
-    <!-- 顶部标题 -->
-    <div class="dashboard-header">
-      <h1 class="dashboard-title">互联网内容实时分析大屏</h1>
-      <div class="dashboard-time">{{ currentTime }}</div>
-    </div>
+  <div class="fullscreen-wrapper" ref="wrapperRef">
+    <div class="dashboard-container" :style="scaleStyle">
+      <!-- 顶部标题 -->
+      <div class="dashboard-header">
+        <h1 class="dashboard-title">互联网内容实时分析大屏</h1>
+        <div class="dashboard-time">{{ currentTime }}</div>
+      </div>
 
-    <!-- 顶部统计卡片 -->
-    <div class="stats-row">
-      <el-card class="stat-card" shadow="hover">
-        <div class="stat-content">
-          <div class="stat-icon total">
-            <el-icon><DataLine /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-label">数据总量</div>
-            <div class="stat-value">{{ stats.total }}</div>
-            <div class="stat-trend">
-              <span class="trend-up">+{{ stats.todayCount }} 今日新增</span>
+      <!-- 顶部统计卡片 -->
+      <div class="stats-row">
+        <el-card class="stat-card" shadow="hover">
+          <div class="stat-content">
+            <div class="stat-icon total">
+              <el-icon><DataLine /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">数据总量</div>
+              <div class="stat-value">{{ stats.total }}</div>
+              <div class="stat-trend">
+                <span class="trend-up">+{{ stats.todayCount }} 今日新增</span>
+              </div>
             </div>
           </div>
-        </div>
-      </el-card>
+        </el-card>
 
-      <el-card class="stat-card" shadow="hover">
-        <div class="stat-content">
-          <div class="stat-icon webmedia">
-            <el-icon><Document /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-label">网媒数据</div>
-            <div class="stat-value">{{ stats.webmediaCount }}</div>
-            <div class="stat-trend">
-              <span>占比 {{ webmediaPercent }}%</span>
+        <el-card class="stat-card" shadow="hover">
+          <div class="stat-content">
+            <div class="stat-icon webmedia">
+              <el-icon><Document /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">网媒数据</div>
+              <div class="stat-value">{{ stats.webmediaCount }}</div>
+              <div class="stat-trend">
+                <span>占比 {{ webmediaPercent }}%</span>
+              </div>
             </div>
           </div>
-        </div>
-      </el-card>
+        </el-card>
 
-      <el-card class="stat-card" shadow="hover">
-        <div class="stat-content">
-          <div class="stat-icon weibo">
-            <el-icon><ChatDotRound /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-label">微博数据</div>
-            <div class="stat-value">{{ stats.weiboCount }}</div>
-            <div class="stat-trend">
-              <span>占比 {{ weiboPercent }}%</span>
+        <el-card class="stat-card" shadow="hover">
+          <div class="stat-content">
+            <div class="stat-icon weibo">
+              <el-icon><ChatDotRound /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">微博数据</div>
+              <div class="stat-value">{{ stats.weiboCount }}</div>
+              <div class="stat-trend">
+                <span>占比 {{ weiboPercent }}%</span>
+              </div>
             </div>
           </div>
-        </div>
-      </el-card>
+        </el-card>
 
-      <el-card class="stat-card" shadow="hover">
-        <div class="stat-content">
-          <div class="stat-icon sentiment">
-            <el-icon><TrendCharts /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-label">情感分析</div>
-            <div class="stat-distribution">
-              <span class="sentiment-item positive">正面 {{ stats.sentimentDistribution.positive }}</span>
-              <span class="sentiment-item neutral">中性 {{ stats.sentimentDistribution.neutral }}</span>
-              <span class="sentiment-item negative">负面 {{ stats.sentimentDistribution.negative }}</span>
+        <el-card class="stat-card" shadow="hover">
+          <div class="stat-content">
+            <div class="stat-icon sentiment">
+              <el-icon><TrendCharts /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">情感分析</div>
+              <div class="stat-distribution">
+                <span class="sentiment-item positive">正面 {{ stats.sentimentDistribution.positive }}</span>
+                <span class="sentiment-item neutral">中性 {{ stats.sentimentDistribution.neutral }}</span>
+                <span class="sentiment-item negative">负面 {{ stats.sentimentDistribution.negative }}</span>
+              </div>
             </div>
           </div>
-        </div>
-      </el-card>
-    </div>
+        </el-card>
+      </div>
 
-    <!-- 主要内容区域 -->
-    <div class="main-content">
-      <!-- 左侧区域 -->
-      <div class="left-section">
-        <!-- 实时数据流 -->
-        <el-card class="data-stream-card" shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span class="card-title">
-                <el-icon class="streaming-icon"><Connection /></el-icon>
-                实时数据流
-              </span>
-              <el-tag :type="isStreaming ? 'success' : 'info'" size="small">
-                {{ isStreaming ? '推送中' : '已暂停' }}
-              </el-tag>
-              <el-switch
-                v-model="isStreaming"
-                active-text="推送"
-                inactive-text="暂停"
-                @change="handleStreamToggle"
-              />
+      <!-- 主要内容区域 -->
+      <div class="main-content">
+        <!-- 左侧区域 -->
+        <div class="left-section">
+          <!-- 实时数据流 -->
+          <el-card class="data-stream-card" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <span class="card-title">
+                  <el-icon class="streaming-icon"><Connection /></el-icon>
+                  实时数据流
+                </span>
+                <el-tag :type="isStreaming ? 'success' : 'info'" size="small">
+                  {{ isStreaming ? '推送中' : '已暂停' }}
+                </el-tag>
+                <el-switch
+                  v-model="isStreaming"
+                  active-text="推送"
+                  inactive-text="暂停"
+                  @change="handleStreamToggle"
+                />
+              </div>
+            </template>
+            <div class="data-stream">
+              <TransitionGroup name="stream-item" tag="div" class="stream-list">
+                <div
+                  v-for="item in streamData"
+                  :key="item.id"
+                  class="stream-item"
+                >
+                  <div class="stream-item-header">
+                    <el-tag :type="isWebMedia(item) ? 'primary' : 'success'" size="small">
+                      {{ isWebMedia(item) ? '网媒' : '微博' }}
+                    </el-tag>
+                    <el-tag
+                      v-if="item.sentiment"
+                      :type="getSentimentType(item.sentiment)"
+                      size="small"
+                    >
+                      {{ getSentimentText(item.sentiment) }}
+                    </el-tag>
+                    <span class="stream-time">{{ formatStreamTime(item.streamTime) }}</span>
+                  </div>
+                  <div class="stream-item-content">
+                    {{ isWebMedia(item) ? item.title : item.content.substring(0, 80) }}...
+                  </div>
+                  <div class="stream-item-meta">
+                    <span>来源: {{ isWebMedia(item) ? item.source : item.userName }}</span>
+                  </div>
+                </div>
+              </TransitionGroup>
             </div>
-          </template>
-          <div class="data-stream">
-            <TransitionGroup name="stream-item" tag="div" class="stream-list">
+          </el-card>
+
+          <!-- 热点话题 -->
+          <el-card class="hot-topics-card" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <span class="card-title">
+                  <el-icon><Lightning /></el-icon>
+                  热点话题
+                </span>
+              </div>
+            </template>
+            <div class="hot-topics">
               <div
-                v-for="item in streamData"
-                :key="item.id"
-                class="stream-item"
+                v-for="(topic, index) in hotTopics"
+                :key="index"
+                class="topic-item"
               >
-                <div class="stream-item-header">
-                  <el-tag :type="isWebMedia(item) ? 'primary' : 'success'" size="small">
-                    {{ isWebMedia(item) ? '网媒' : '微博' }}
-                  </el-tag>
-                  <el-tag
-                    v-if="item.sentiment"
-                    :type="getSentimentType(item.sentiment)"
-                    size="small"
-                  >
-                    {{ getSentimentText(item.sentiment) }}
-                  </el-tag>
-                  <span class="stream-time">{{ formatStreamTime(item.streamTime) }}</span>
+                <div class="topic-rank" :class="'rank-' + (index + 1)">{{ index + 1 }}</div>
+                <div class="topic-info">
+                  <div class="topic-keyword">{{ topic.keyword }}</div>
+                  <div class="topic-count">{{ topic.count }} 条相关</div>
                 </div>
-                <div class="stream-item-content">
-                  {{ isWebMedia(item) ? item.title : item.content.substring(0, 80) }}...
-                </div>
-                <div class="stream-item-meta">
-                  <span>来源: {{ isWebMedia(item) ? item.source : item.userName }}</span>
+                <div class="topic-trend">
+                  <el-icon v-if="topic.trend === 'up'" color="#f56c6c"><CaretTop /></el-icon>
+                  <el-icon v-else-if="topic.trend === 'down'" color="#67c23a"><CaretBottom /></el-icon>
+                  <el-icon v-else color="#909399"><Minus /></el-icon>
                 </div>
               </div>
-            </TransitionGroup>
-          </div>
-        </el-card>
-
-        <!-- 热点话题 -->
-        <el-card class="hot-topics-card" shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span class="card-title">
-                <el-icon><Lightning /></el-icon>
-                热点话题
-              </span>
             </div>
-          </template>
-          <div class="hot-topics">
-            <div
-              v-for="(topic, index) in hotTopics"
-              :key="index"
-              class="topic-item"
-            >
-              <div class="topic-rank" :class="'rank-' + (index + 1)">{{ index + 1 }}</div>
-              <div class="topic-info">
-                <div class="topic-keyword">{{ topic.keyword }}</div>
-                <div class="topic-count">{{ topic.count }} 条相关</div>
+          </el-card>
+        </div>
+
+        <!-- 中间区域 -->
+        <div class="center-section">
+          <!-- 情感趋势图 -->
+          <el-card class="sentiment-trend-card" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <span class="card-title">
+                  <el-icon><TrendCharts /></el-icon>
+                  情感分析趋势
+                </span>
+                <el-radio-group v-model="trendPeriod" size="small" @change="updateSentimentTrend">
+                  <el-radio-button label="24h">24小时</el-radio-button>
+                  <el-radio-button label="7d">7天</el-radio-button>
+                  <el-radio-button label="30d">30天</el-radio-button>
+                </el-radio-group>
               </div>
-              <div class="topic-trend">
-                <el-icon v-if="topic.trend === 'up'" color="#f56c6c"><CaretTop /></el-icon>
-                <el-icon v-else-if="topic.trend === 'down'" color="#67c23a"><CaretBottom /></el-icon>
-                <el-icon v-else color="#909399"><Minus /></el-icon>
+            </template>
+            <div ref="sentimentTrendRef" class="chart-container"></div>
+          </el-card>
+
+          <!-- 数据类型分布 -->
+          <el-card class="data-type-card" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <span class="card-title">
+                  <el-icon><PieChart /></el-icon>
+                  数据类型分布
+                </span>
               </div>
-            </div>
-          </div>
-        </el-card>
-      </div>
+            </template>
+            <div ref="dataTypeRef" class="chart-container-small"></div>
+          </el-card>
+        </div>
 
-      <!-- 中间区域 -->
-      <div class="center-section">
-        <!-- 情感趋势图 -->
-        <el-card class="sentiment-trend-card" shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span class="card-title">
-                <el-icon><TrendCharts /></el-icon>
-                情感分析趋势
-              </span>
-              <el-radio-group v-model="trendPeriod" size="small" @change="updateSentimentTrend">
-                <el-radio-button label="24h">24小时</el-radio-button>
-                <el-radio-button label="7d">7天</el-radio-button>
-                <el-radio-button label="30d">30天</el-radio-button>
-              </el-radio-group>
-            </div>
-          </template>
-          <div ref="sentimentTrendRef" class="chart-container"></div>
-        </el-card>
+        <!-- 右侧区域 -->
+        <div class="right-section">
+          <!-- 关键词云 -->
+          <el-card class="keywords-cloud-card" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <span class="card-title">
+                  <el-icon><Management /></el-icon>
+                  关键词云
+                </span>
+              </div>
+            </template>
+            <div ref="keywordsCloudRef" class="chart-container"></div>
+          </el-card>
 
-        <!-- 数据类型分布 -->
-        <el-card class="data-type-card" shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span class="card-title">
-                <el-icon><PieChart /></el-icon>
-                数据类型分布
-              </span>
-            </div>
-          </template>
-          <div ref="dataTypeRef" class="chart-container-small"></div>
-        </el-card>
-      </div>
-
-      <!-- 右侧区域 -->
-      <div class="right-section">
-        <!-- 关键词云 -->
-        <el-card class="keywords-cloud-card" shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span class="card-title">
-                <el-icon><Management /></el-icon>
-                关键词云
-              </span>
-            </div>
-          </template>
-          <div ref="keywordsCloudRef" class="chart-container"></div>
-        </el-card>
-
-        <!-- 情感分布饼图 -->
-        <el-card class="sentiment-pie-card" shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span class="card-title">
-                <el-icon><DataAnalysis /></el-icon>
-                情感分布
-              </span>
-            </div>
-          </template>
-          <div ref="sentimentPieRef" class="chart-container-small"></div>
-        </el-card>
+          <!-- 情感分布饼图 -->
+          <el-card class="sentiment-pie-card" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <span class="card-title">
+                  <el-icon><DataAnalysis /></el-icon>
+                  情感分布
+                </span>
+              </div>
+            </template>
+            <div ref="sentimentPieRef" class="chart-container-small"></div>
+          </el-card>
+        </div>
       </div>
     </div>
   </div>
@@ -246,6 +248,41 @@ import type { EChartsOption } from 'echarts'
 import 'echarts-wordcloud'
 
 const dataStore = useDataStore()
+
+// 自适应缩放相关
+const wrapperRef = ref<HTMLElement>()
+const scaleStyle = ref({})
+const BASE_WIDTH = 1920
+const BASE_HEIGHT = 1080
+
+// 计算缩放比例
+const updateScale = () => {
+  if (!wrapperRef.value) return
+
+  const windowWidth = window.innerWidth
+  const windowHeight = window.innerHeight
+
+  // 计算缩放比例，取宽高中较小的比例以确保内容完全显示
+  const scaleX = windowWidth / BASE_WIDTH
+  const scaleY = windowHeight / BASE_HEIGHT
+  const scale = Math.min(scaleX, scaleY)
+
+  // 计算偏移量以居中显示
+  const offsetX = (windowWidth - BASE_WIDTH * scale) / 2
+  const offsetY = (windowHeight - BASE_HEIGHT * scale) / 2
+
+  scaleStyle.value = {
+    transform: `scale(${scale})`,
+    transformOrigin: 'top left',
+    left: `${offsetX}px`,
+    top: `${offsetY}px`
+  }
+
+  // 缩放后需要重新渲染图表
+  nextTick(() => {
+    renderAllCharts()
+  })
+}
 
 // 时间显示
 const currentTime = ref('')
@@ -281,6 +318,12 @@ const sentimentTrendRef = ref()
 const dataTypeRef = ref()
 const keywordsCloudRef = ref()
 const sentimentPieRef = ref()
+
+// 图表实例
+let sentimentTrendChart: echarts.ECharts | null = null
+let dataTypeChart: echarts.ECharts | null = null
+let keywordsCloudChart: echarts.ECharts | null = null
+let sentimentPieChart: echarts.ECharts | null = null
 
 // 更新当前时间
 const updateTime = () => {
@@ -342,7 +385,7 @@ const simulateRealTimeStream = () => {
     const item = allData[randomIndex]
     newItems.push({
       ...item,
-      streamTime: Date.now() + i * 100 // 添加微小的时间差
+      streamTime: Date.now() + i * 100
     })
   }
 
@@ -368,7 +411,7 @@ const startStreaming = () => {
 
   // 每2-5秒推送一次
   const scheduleNext = () => {
-    const delay = Math.random() * 3000 + 2000 // 2-5秒
+    const delay = Math.random() * 3000 + 2000
     streamInterval = setTimeout(() => {
       simulateRealTimeStream()
       if (isStreaming.value) {
@@ -393,7 +436,6 @@ const extractHotTopics = () => {
   const allData = dataStore.allData
   const keywordMap = new Map<string, number>()
 
-  // 统计关键词出现次数
   allData.forEach(item => {
     if (item.aiKeywords && item.aiKeywords.length > 0) {
       item.aiKeywords.forEach(keyword => {
@@ -402,7 +444,6 @@ const extractHotTopics = () => {
     }
   })
 
-  // 如果没有关键词，使用内容中的词
   if (keywordMap.size === 0) {
     allData.forEach(item => {
       const content = isWebMedia(item) ? item.title : item.content
@@ -413,7 +454,6 @@ const extractHotTopics = () => {
     })
   }
 
-  // 排序并取前10
   const sortedTopics = Array.from(keywordMap.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10)
@@ -443,14 +483,12 @@ const renderSentimentTrend = () => {
     format = 'MM-DD'
   }
 
-  // 生成时间点
   const timePoints: string[] = []
   const positiveData: number[] = []
   const neutralData: number[] = []
   const negativeData: number[] = []
 
   if (trendPeriod.value === '24h') {
-    // 24小时，按小时统计
     for (let i = 23; i >= 0; i--) {
       const time = now.subtract(i, 'hour')
       timePoints.push(time.format(format))
@@ -465,7 +503,6 @@ const renderSentimentTrend = () => {
       negativeData.push(hourData.filter(item => item.sentiment === 'negative').length)
     }
   } else {
-    // 7天或30天，按天统计
     for (let i = days - 1; i >= 0; i--) {
       const time = now.subtract(i, 'day')
       timePoints.push(time.format(format))
@@ -481,7 +518,10 @@ const renderSentimentTrend = () => {
     }
   }
 
-  const chart = echarts.init(sentimentTrendRef.value)
+  if (!sentimentTrendChart) {
+    sentimentTrendChart = echarts.init(sentimentTrendRef.value)
+  }
+
   const option: EChartsOption = {
     tooltip: {
       trigger: 'axis',
@@ -491,14 +531,21 @@ const renderSentimentTrend = () => {
     },
     legend: {
       data: ['正面', '中性', '负面'],
+      top: '5%',
+      left: 'center',
       textStyle: {
-        color: '#fff'
-      }
+        color: '#fff',
+        fontSize: 13
+      },
+      itemWidth: 20,
+      itemHeight: 12,
+      itemGap: 20
     },
     grid: {
       left: '3%',
       right: '4%',
-      bottom: '3%',
+      top: '18%',
+      bottom: trendPeriod.value === '24h' ? '8%' : '15%',
       containLabel: true
     },
     xAxis: {
@@ -506,7 +553,9 @@ const renderSentimentTrend = () => {
       data: timePoints,
       axisLabel: {
         color: '#fff',
-        rotate: trendPeriod.value === '24h' ? 0 : 45
+        rotate: trendPeriod.value === '24h' ? 0 : 45,
+        fontSize: 11,
+        margin: 10
       },
       axisLine: {
         lineStyle: { color: '#4a5568' }
@@ -566,7 +615,7 @@ const renderSentimentTrend = () => {
       }
     ]
   }
-  chart.setOption(option)
+  sentimentTrendChart.setOption(option)
 }
 
 // 更新情感趋势
@@ -580,7 +629,10 @@ const updateSentimentTrend = () => {
 const renderDataType = () => {
   if (!dataTypeRef.value) return
 
-  const chart = echarts.init(dataTypeRef.value)
+  if (!dataTypeChart) {
+    dataTypeChart = echarts.init(dataTypeRef.value)
+  }
+
   const option: EChartsOption = {
     tooltip: {
       trigger: 'item',
@@ -618,7 +670,7 @@ const renderDataType = () => {
       }
     ]
   }
-  chart.setOption(option)
+  dataTypeChart.setOption(option)
 }
 
 // 渲染关键词云
@@ -628,7 +680,6 @@ const renderKeywordsCloud = () => {
   const allData = dataStore.allData
   const keywordMap = new Map<string, number>()
 
-  // 统计关键词
   allData.forEach(item => {
     if (item.aiKeywords && item.aiKeywords.length > 0) {
       item.aiKeywords.forEach(keyword => {
@@ -637,7 +688,6 @@ const renderKeywordsCloud = () => {
     }
   })
 
-  // 如果没有关键词，生成模拟数据
   if (keywordMap.size === 0) {
     const mockKeywords = ['互联网', '数据分析', '人工智能', '社交媒体', '新闻', '科技', '用户体验', '产品', '服务', '创新']
     mockKeywords.forEach(keyword => {
@@ -650,7 +700,10 @@ const renderKeywordsCloud = () => {
     .sort((a, b) => b.value - a.value)
     .slice(0, 50)
 
-  const chart = echarts.init(keywordsCloudRef.value)
+  if (!keywordsCloudChart) {
+    keywordsCloudChart = echarts.init(keywordsCloudRef.value)
+  }
+
   const option: EChartsOption = {
     tooltip: {
       show: true
@@ -686,14 +739,17 @@ const renderKeywordsCloud = () => {
       }
     ]
   }
-  chart.setOption(option)
+  keywordsCloudChart.setOption(option)
 }
 
 // 渲染情感分布饼图
 const renderSentimentPie = () => {
   if (!sentimentPieRef.value) return
 
-  const chart = echarts.init(sentimentPieRef.value)
+  if (!sentimentPieChart) {
+    sentimentPieChart = echarts.init(sentimentPieRef.value)
+  }
+
   const option: EChartsOption = {
     tooltip: {
       trigger: 'item',
@@ -730,7 +786,7 @@ const renderSentimentPie = () => {
       }
     ]
   }
-  chart.setOption(option)
+  sentimentPieChart.setOption(option)
 }
 
 // 渲染所有图表
@@ -740,6 +796,12 @@ const renderAllCharts = () => {
     renderDataType()
     renderKeywordsCloud()
     renderSentimentPie()
+
+    // 调整图表大小
+    sentimentTrendChart?.resize()
+    dataTypeChart?.resize()
+    keywordsCloudChart?.resize()
+    sentimentPieChart?.resize()
   })
 }
 
@@ -755,6 +817,9 @@ onMounted(async () => {
   // 提取热点话题
   extractHotTopics()
 
+  // 初始化缩放
+  updateScale()
+
   // 渲染图表
   renderAllCharts()
 
@@ -764,7 +829,10 @@ onMounted(async () => {
   // 定期更新热点话题
   setInterval(() => {
     extractHotTopics()
-  }, 30000) // 30秒更新一次
+  }, 30000)
+
+  // 监听窗口大小变化
+  window.addEventListener('resize', updateScale)
 })
 
 // 清理
@@ -773,16 +841,32 @@ onBeforeUnmount(() => {
     clearInterval(timeInterval)
   }
   stopStreaming()
+
+  // 销毁图表实例
+  sentimentTrendChart?.dispose()
+  dataTypeChart?.dispose()
+  keywordsCloudChart?.dispose()
+  sentimentPieChart?.dispose()
+
+  // 移除事件监听
+  window.removeEventListener('resize', updateScale)
 })
 </script>
 
 <style lang="scss" scoped>
-.dashboard-container {
-  width: 100%;
-  height: 100%;
+.fullscreen-wrapper {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
   background: linear-gradient(135deg, #1a1f3a 0%, #2d3561 100%);
+  position: relative;
+}
+
+.dashboard-container {
+  width: 1920px;
+  height: 1080px;
+  position: absolute;
   padding: 20px;
-  overflow-y: auto;
 
   .dashboard-header {
     display: flex;
@@ -919,7 +1003,7 @@ onBeforeUnmount(() => {
     display: grid;
     grid-template-columns: 350px 1fr 400px;
     gap: 16px;
-    height: calc(100vh - 260px);
+    height: calc(1080px - 260px);
 
     .left-section,
     .center-section,
@@ -960,12 +1044,12 @@ onBeforeUnmount(() => {
       }
     }
 
-    // 实时数据流
     .data-stream-card {
-      flex: 1;
+      height: 404px;
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      flex-shrink: 0;
 
       :deep(.el-card__body) {
         flex: 1;
@@ -1024,10 +1108,10 @@ onBeforeUnmount(() => {
       }
     }
 
-    // 热点话题
     .hot-topics-card {
       height: 400px;
       overflow: hidden;
+      flex-shrink: 0;
 
       .hot-topics {
         max-height: 340px;
@@ -1097,7 +1181,6 @@ onBeforeUnmount(() => {
       }
     }
 
-    // 图表容器
     .chart-container {
       width: 100%;
       height: 300px;
@@ -1109,24 +1192,55 @@ onBeforeUnmount(() => {
     }
 
     .sentiment-trend-card {
-      flex: 1;
+      height: 484px;
+      flex-shrink: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+
+      :deep(.el-card__body) {
+        flex: 1;
+        overflow: hidden;
+      }
     }
 
     .data-type-card {
       height: 320px;
+      flex-shrink: 0;
+      overflow: hidden;
+
+      :deep(.el-card__body) {
+        height: 100%;
+        overflow: hidden;
+      }
     }
 
     .keywords-cloud-card {
-      flex: 1;
+      height: 484px;
+      flex-shrink: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+
+      :deep(.el-card__body) {
+        flex: 1;
+        overflow: hidden;
+      }
     }
 
     .sentiment-pie-card {
       height: 320px;
+      flex-shrink: 0;
+      overflow: hidden;
+
+      :deep(.el-card__body) {
+        height: 100%;
+        overflow: hidden;
+      }
     }
   }
 }
 
-// 动画效果
 @keyframes pulse {
   0%, 100% {
     opacity: 1;
@@ -1154,7 +1268,6 @@ onBeforeUnmount(() => {
   transform: translateX(30px);
 }
 
-// 滚动条样式
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

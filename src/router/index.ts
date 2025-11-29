@@ -6,12 +6,21 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     redirect: '/data-import'
   },
+  // {
+  //   path: '/dashboard',
+  //   name: 'Dashboard',
+  //   component: () => import('@/views/dashboard/index.vue'),
+  //   meta: {
+  //     title: '实时分析大屏'
+  //   }
+  // },
   {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: () => import('@/views/dashboard/index.vue'),
+    path: '/dashboard/fullscreen',
+    name: 'DashboardFullscreen',
+    component: () => import('@/views/dashboard/fullscreen.vue'),
     meta: {
-      title: '实时分析大屏'
+      title: '实时分析大屏',
+      hideLayout: true
     }
   },
   {

@@ -262,8 +262,6 @@ import {
   Reading
 } from '@element-plus/icons-vue'
 import { useDataStore } from '@/stores/dataStore'
-import { isWebMedia } from '@/types'
-import type { SentimentData, WebMediaData, WeiboData } from '@/types'
 import dayjs from 'dayjs'
 import * as echarts from 'echarts'
 import type { EChartsOption } from 'echarts'
@@ -305,7 +303,7 @@ const updateScale = () => {
 
 // 时间显示
 const currentTime = ref('')
-let timeInterval: NodeJS.Timeout | null = null
+let timeInterval: number | null = null
 
 // 统计数据
 const stats = computed(() => dataStore.statistics)
@@ -388,8 +386,8 @@ const extractHotTopics = () => {
   const keywordMap = new Map<string, number>()
 
   weiboData.forEach(item => {
-    if (item.topicTags && item.topicTags.length > 0) {
-      item.topicTags.forEach(tag => {
+    if (Array.isArray(item.topicTags) && item.topicTags.length > 0) {
+      item.topicTags.forEach((tag: string) => {
         keywordMap.set(tag, (keywordMap.get(tag) || 0) + 1)
       })
     }
@@ -404,14 +402,14 @@ const extractHotTopics = () => {
     })
   }
 
+  const trends = ['up', 'down', 'stable'] as const
   const sortedTopics = Array.from(keywordMap.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, 8)
-    .map(([keyword, count]) => ({
-      keyword,
-      count,
-      trend: (['up', 'down', 'stable'] as const)[Math.floor(Math.random() * 3)]
-    }))
+    .map(([keyword, count]) => {
+      const t = trends[Math.floor(Math.random() * trends.length)] as typeof trends[number]
+      return { keyword, count, trend: t }
+    })
 
   hotTopics.value = sortedTopics
   console.log('热门话题:', hotTopics.value.length)
@@ -428,7 +426,7 @@ const renderWebmediaTrend = () => {
   console.log('渲染网媒趋势图 - 数据量:', webmediaData.length)
 
   const now = dayjs()
-  const hours = webmediaPeriod.value === '24h' ? 24 : 168
+  // 怀留注: 计算周期，暂不使用具体变量
 
   const timePoints: string[] = []
   const positiveData: number[] = []
@@ -796,15 +794,13 @@ const renderWordCloud = () => {
         textStyle: {
           fontFamily: 'sans-serif',
           fontWeight: 'bold',
-          color: () => {
+          color: (): string => {
             const colors = ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399']
-            return colors[Math.floor(Math.random() * colors.length)]
+            return String(colors[Math.floor(Math.random() * colors.length)] ?? colors[0])
           }
         },
         emphasis: {
           textStyle: {
-            shadowBlur: 10,
-            shadowColor: '#333'
           }
         },
         data: data

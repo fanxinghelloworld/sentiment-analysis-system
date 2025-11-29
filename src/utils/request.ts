@@ -1,4 +1,5 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios'
+import axios from 'axios'
+import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios'
 import { ElMessage } from 'element-plus'
 
 // 响应数据接口
@@ -44,7 +45,8 @@ service.interceptors.response.use(
       return Promise.reject(new Error(res.message || '请求失败'))
     }
 
-    return res
+    // 返回原始响应，后续请求封装会取 response.data
+    return response
   },
   (error: AxiosError) => {
     console.error('响应错误：', error)
@@ -90,19 +92,19 @@ service.interceptors.response.use(
 // 封装请求方法
 export const request = {
   get<T = any>(url: string, params?: any, config?: AxiosRequestConfig): Promise<T> {
-    return service.get(url, { params, ...config })
+    return service.get(url, { params, ...config }).then((r: AxiosResponse) => r.data)
   },
 
   post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-    return service.post(url, data, config)
+    return service.post(url, data, config).then((r: AxiosResponse) => r.data)
   },
 
   put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-    return service.put(url, data, config)
+    return service.put(url, data, config).then((r: AxiosResponse) => r.data)
   },
 
   delete<T = any>(url: string, params?: any, config?: AxiosRequestConfig): Promise<T> {
-    return service.delete(url, { params, ...config })
+    return service.delete(url, { params, ...config }).then((r: AxiosResponse) => r.data)
   }
 }
 

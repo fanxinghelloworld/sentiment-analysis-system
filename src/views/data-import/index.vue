@@ -67,6 +67,7 @@
               :auto-upload="false"
               :show-file-list="false"
               accept=".xlsx,.xls"
+              multiple
               :on-change="handleFileChange"
               :before-upload="beforeUpload"
             >
@@ -527,7 +528,6 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Plus,
   UploadFilled,
-  Document,
   Delete,
   Search,
   User,
@@ -539,7 +539,7 @@ import {
 } from '@element-plus/icons-vue'
 import { useDataStore } from '@/stores/dataStore'
 import { parseExcelFile, convertToWebMediaData, convertToWeiboData } from '@/utils/excel'
-import { formatDate, formatFileSize } from '@/utils'
+import { formatDate } from '@/utils'
 import { isWebMedia } from '@/types'
 import { aiApi } from '@/api/ai'
 import type { UploadFile, UploadRawFile } from 'element-plus'
@@ -692,7 +692,7 @@ const statsData = computed(() => {
     const times = data.map(item => dayjs(item.publishTime)).sort((a, b) => a.unix() - b.unix())
     const minTime = times[0]
     const maxTime = times[times.length - 1]
-    timeRange = `${minTime.format('YYYY-MM-DD')} 至 ${maxTime.format('YYYY-MM-DD')}`
+    timeRange = `${minTime?.format('YYYY-MM-DD')} 至 ${maxTime?.format('YYYY-MM-DD')}`
   }
 
   // 微博互动数据统计
@@ -965,10 +965,6 @@ const handlePageChange = () => {
   // 页码改变
 }
 
-// 选择变化处理
-const handleSelectionChange = (selection: SentimentData[]) => {
-  selectedItems.value = selection
-}
 
 // 选择当前页
 const handleSelectCurrentPage = () => {
@@ -1012,7 +1008,9 @@ const hasAIResult = (item: SentimentData) => {
 }
 
 // 处理AI分析命令
-const handleAIAnalysisCommand = async (command: string) => {
+type AICommand = 'sentiment' | 'keywords' | 'summary' | 'category'
+
+const handleAIAnalysisCommand = async (command: AICommand) => {
   if (selectedItems.value.length === 0) {
     ElMessage.warning('请先选择要分析的数据')
     return
@@ -1102,65 +1100,7 @@ const handleAIAnalysisCommand = async (command: string) => {
   }
 }
 
-// AI智能分析（旧版本，保留兼容）
-const handleAIAnalysis = async () => {
-  if (selectedItems.value.length === 0) {
-    ElMessage.warning('请先选择要分析的数据')
-    return
-  }
 
-
-  const itemsToAnalyze = selectedItems.value
-
-  aiAnalyzing.value = true
-
-  try {
-    ElMessage.info(`开始AI分析 ${itemsToAnalyze.length} 条数据...`)
-
-    let successCount = 0
-
-    for (const item of itemsToAnalyze) {
-      try {
-        const content = isWebMedia(item) ? `${item.title}\n${item.content}` : item.content
-        const dataType = isWebMedia(item) ? 'webmedia' : 'weibo'
-
-        const result = await aiApi.comprehensiveAnalysis(content, dataType)
-
-        // 更新数据
-        const updates = {
-          sentiment: result.sentiment.label,
-          sentimentScore: result.sentiment.score,
-          aiKeywords: result.keywords.map(k => k.word),
-          aiSummary: result.summary,
-          aiCategory: result.category
-        }
-
-        if (isWebMedia(item)) {
-          await dataStore.updateWebMediaData(item.id, updates)
-        } else {
-          await dataStore.updateWeiboData(item.id, updates)
-        }
-
-        successCount++
-
-        // 延迟避免API限流
-        await new Promise(resolve => setTimeout(resolve, 1000))
-      } catch (error) {
-        console.error(`分析失败 (${item.id}):`, error)
-      }
-    }
-
-    ElMessage.success(`AI分析完成！成功 ${successCount}/${itemsToAnalyze.length} 条`)
-
-    // 清空选择
-    selectedItems.value = []
-  } catch (error: any) {
-    console.error('AI分析失败:', error)
-    ElMessage.error(error.message || 'AI分析失败')
-  } finally {
-    aiAnalyzing.value = false
-  }
-}
 
 // 获取数据源颜色
 const getSourceColor = (source: DataSource) => {
@@ -1627,8 +1567,11 @@ onMounted(async () => {
   loadDataSources()
 
   // 如果有数据源且没有选中任何数据源，默认选中第一个
-  if (dataSources.value.length > 0 && !selectedSourceId.value) {
-    selectedSourceId.value = dataSources.value[0].id
+  if (dataSources.value?.length > 0 && !selectedSourceId.value) {
+    const firstId = dataSources.value[0]?.id
+    if (firstId) {
+      selectedSourceId.value = firstId
+    }
   }
 })
 </script>

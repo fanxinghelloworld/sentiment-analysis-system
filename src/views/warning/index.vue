@@ -177,7 +177,7 @@
               >
                 查看详情
               </el-button>
-              <el-dropdown @command="(cmd) => handleWarningAction(row.id, cmd)">
+              <el-dropdown @command="onDropdownCommand(row.id, $event)">
                 <el-button type="primary" size="small" link>
                   处理<el-icon class="el-icon--right"><ArrowDown /></el-icon>
                 </el-button>
@@ -410,7 +410,7 @@ const isEditMode = ref(false)
 
 // 表单
 const ruleFormRef = ref<FormInstance>()
-const ruleForm = ref<Partial<WarningRule>>({
+const ruleForm = ref<Partial<WarningRule> & { config: Record<string, any> }>({
   name: '',
   type: 'keyword',
   level: 'medium',
@@ -642,6 +642,11 @@ const handleWarningAction = async (id: string, status: WarningRecord['status']) 
   }
 }
 
+const onDropdownCommand = (rowId: string, cmd: unknown) => {
+  // $event from el-dropdown is the command value
+  handleWarningAction(rowId, String(cmd) as WarningRecord['status'])
+}
+
 // 图表渲染
 const renderTrendChart = () => {
   if (!trendChartRef.value) return
@@ -810,7 +815,7 @@ const renderStatusChart = () => {
   }
 
   warningStore.records.forEach(r => {
-    statusCount[r.status]++
+    statusCount[r.status] = (statusCount[r.status] || 0) + 1
   })
 
   const data = [

@@ -249,12 +249,12 @@ const dataStore = useDataStore()
 
 // 时间显示
 const currentTime = ref('')
-let timeInterval: NodeJS.Timeout | null = null
+let timeInterval: number | null = null
 
 // 实时数据流
 const streamData = ref<(SentimentData & { streamTime: number })[]>([])
 const isStreaming = ref(true)
-let streamInterval: NodeJS.Timeout | null = null
+let streamInterval: number | null = null
 
 // 统计数据
 const stats = computed(() => dataStore.statistics)
@@ -341,7 +341,7 @@ const simulateRealTimeStream = () => {
     const randomIndex = Math.floor(Math.random() * allData.length)
     const item = allData[randomIndex]
     newItems.push({
-      ...item,
+      ...(item as any),
       streamTime: Date.now() + i * 100 // 添加微小的时间差
     })
   }
@@ -414,14 +414,14 @@ const extractHotTopics = () => {
   }
 
   // 排序并取前10
+  const trends = ['up', 'down', 'stable'] as const
   const sortedTopics = Array.from(keywordMap.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10)
-    .map(([keyword, count]) => ({
-      keyword,
-      count,
-      trend: (['up', 'down', 'stable'] as const)[Math.floor(Math.random() * 3)]
-    }))
+    .map(([keyword, count]) => {
+      const t = trends[Math.floor(Math.random() * trends.length)] as typeof trends[number]
+      return { keyword, count, trend: t }
+    })
 
   hotTopics.value = sortedTopics
 }
@@ -671,15 +671,13 @@ const renderKeywordsCloud = () => {
         textStyle: {
           fontFamily: 'sans-serif',
           fontWeight: 'bold',
-          color: () => {
+          color: (): string => {
             const colors = ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399']
-            return colors[Math.floor(Math.random() * colors.length)]
+            return String(colors[Math.floor(Math.random() * colors.length)] ?? colors[0])
           }
         },
         emphasis: {
           textStyle: {
-            shadowBlur: 10,
-            shadowColor: '#333'
           }
         },
         data: data

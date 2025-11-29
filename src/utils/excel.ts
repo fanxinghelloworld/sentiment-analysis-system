@@ -12,7 +12,18 @@ export const parseExcelFile = (file: File): Promise<any[]> => {
         const data = e.target?.result
         const workbook = XLSX.read(data, { type: 'binary' })
         const sheetName = workbook.SheetNames[0]
+        if (!sheetName) {
+          // 没有表格，返回空数组
+          resolve([])
+          return
+        }
+
         const worksheet = workbook.Sheets[sheetName]
+        if (!worksheet) {
+          resolve([])
+          return
+        }
+
         const jsonData = XLSX.utils.sheet_to_json(worksheet)
         resolve(jsonData)
       } catch (error) {
@@ -108,7 +119,7 @@ export const convertToWeiboData = (rawData: any[]): WeiboData[] => {
     repostCount: Number(item.转发量) || 0,
     isVerified: Boolean(item.isVerified),
     userFollowers: Number(item.userFollowers) || 0,
-    topicTags: item.topicTags || '',
+    topicTags: Array.isArray(item.topicTags) ? item.topicTags : (item.topicTags ? String(item.topicTags).split(/[,;，；]/).map(s => s.trim()).filter(Boolean) : []),
     location: item.ip属地 || ''
   }))
 }

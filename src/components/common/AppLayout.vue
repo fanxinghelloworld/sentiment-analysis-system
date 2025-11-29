@@ -11,9 +11,11 @@
           router
           class="nav-menu"
         >
-          <el-menu-item index="/dashboard/fullscreen" @click="handleDashboardClick">
-            <el-icon><DataAnalysis /></el-icon>
-            <span>实时大屏</span>
+          <el-menu-item index="/dashboard/fullscreen">
+            <div @click.stop="handleDashboardClick($event)" class="menu-item-inner">
+              <el-icon><DataAnalysis /></el-icon>
+              <span>实时大屏</span>
+            </div>
           </el-menu-item>
           <el-menu-item index="/data-import">
             <el-icon><Upload /></el-icon>
@@ -60,15 +62,18 @@ const handleWarningClick = () => {
   router.push('/warning')
 }
 
-const handleDashboardClick = (e: MouseEvent) => {
-  // 阻止默认的路由跳转
-  e.preventDefault()
+const handleDashboardClick = (e?: Event | string) => {
+  // 这个 handler 可能会被两种调用方式触发：
+  // - 我们现在从内层元素传入原生事件 ($event) => e 是 Event
+  // - 也可能被外部意外触发并传入 index 字符串 => 处理为路径
 
-  // 在新窗口打开全屏大屏
-  const width = window.screen.availWidth
-  const height = window.screen.availHeight
-  const url = router.resolve({ path: '/dashboard/fullscreen' })
-  window.open(url.href, '_blank');
+  // 如果是原生事件，阻止默认行为并停止冒泡已经通过模板修饰符处理了。
+  // 兼容两种情况：如果传入字符串就把它当作路径；否则使用固定路径。
+  const path = typeof e === 'string' ? e : '/dashboard/fullscreen'
+
+  const url = router.resolve({ path })
+  // 使用完整的 href（相对路径也可），在新窗口打开
+  window.open(url.href, '_blank')
 }
 </script>
 

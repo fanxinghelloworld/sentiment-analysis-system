@@ -533,40 +533,11 @@ Excel文件 → 文件解析 → 数据转换 → IndexedDB存储
 - Safari >= 14
 - Edge >= 90
 
-## 未来规划
+## AI使用
+- 智谱清言(GLM): https://open.bigmodel.cn/  glm4.6
 
-### 🔮 待实现功能
-1. **AI智能分析**：
-   - 接入AI API进行情感分析
-   - 自动关键词提取
-   - 内容摘要生成
-   - 话题聚类分析
+## github仓库
+- https://github.com/fanxinghelloworld/sentiment-analysis-system.git
 
-2. **增强预警功能**：
-   - 实时监控和自动触发
-   - 邮件/短信通知
-   - 预警规则智能推荐
 
-3. **报表导出**：
-   - PDF报告生成
-   - Excel数据导出
-   - 图表截图保存
 
-4. **协作功能**：
-   - 多用户管理
-   - 权限控制
-   - 评论和批注
-
-## License
-
-MIT
-
-## 作者
-
-Generated with Claude Code
-
----
-
-**最后更新时间**: 2025-11-29
-**当前版本**: v1.0.0
-**项目状态**: ✅ 核心功能已完成

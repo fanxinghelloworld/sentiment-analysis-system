@@ -57,7 +57,9 @@ export const useWarningStore = defineStore('warning', () => {
 
   async function addRule(rule: WarningRule) {
     try {
-      await dbHelper.addWarningRule(rule)
+      // 确保传递的是普通对象，而非 Vue 响应式对象
+      const plainRule = JSON.parse(JSON.stringify(rule))
+      await dbHelper.addWarningRule(plainRule)
       await loadRules()
     } catch (error) {
       console.error('添加预警规则失败：', error)
@@ -67,7 +69,9 @@ export const useWarningStore = defineStore('warning', () => {
 
   async function updateRule(id: string, updates: Partial<WarningRule>) {
     try {
-      await dbHelper.updateWarningRule(id, updates)
+      // 确保传递的是普通对象，而非 Vue 响应式对象
+      const plainUpdates = JSON.parse(JSON.stringify(updates))
+      await dbHelper.updateWarningRule(id, plainUpdates)
       await loadRules()
     } catch (error) {
       console.error('更新预警规则失败：', error)
@@ -94,7 +98,9 @@ export const useWarningStore = defineStore('warning', () => {
 
   async function addRecord(record: WarningRecord) {
     try {
-      await dbHelper.addWarningRecord(record)
+      // 确保传递的是普通对象，而非 Vue 响应式对象
+      const plainRecord = JSON.parse(JSON.stringify(record))
+      await dbHelper.addWarningRecord(plainRecord)
       await loadRecords()
     } catch (error) {
       console.error('添加预警记录失败：', error)
@@ -104,7 +110,9 @@ export const useWarningStore = defineStore('warning', () => {
 
   async function updateRecord(id: string, updates: Partial<WarningRecord>) {
     try {
-      await dbHelper.updateWarningRecord(id, updates)
+      // 确保传递的是普通对象，而非 Vue 响应式对象
+      const plainUpdates = JSON.parse(JSON.stringify(updates))
+      await dbHelper.updateWarningRecord(id, plainUpdates)
       await loadRecords()
     } catch (error) {
       console.error('更新预警记录失败：', error)

@@ -96,6 +96,7 @@ export interface WarningRule {
   id: string
   name: string
   type: 'keyword' | 'sentiment' | 'volume' | 'speed'
+  level: WarningLevel
   enabled: boolean
   config: {
     keywords?: string[]
@@ -103,6 +104,8 @@ export interface WarningRule {
     volumeThreshold?: number
     speedThreshold?: number
   }
+  createdAt: string
+  updatedAt: string
 }
 
 // 预警记录接口

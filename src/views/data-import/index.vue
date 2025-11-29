@@ -142,8 +142,38 @@
           <el-tabs v-model="activeTab">
             <el-tab-pane label="数据列表" name="list">
               <div class="tab-header">
-                <span>共 {{ filteredData.length }} 条数据</span>
+                <span>共 {{ filteredData.length }} 条数据
+                  <span v-if="selectedItems.length > 0" class="selected-count">
+                    (已选 {{ selectedItems.length }} 条)
+                  </span>
+                </span>
                 <div class="header-actions">
+                  <el-button
+                    size="small"
+                    @click="handleSelectCurrentPage"
+                  >
+                    选择当前页
+                  </el-button>
+                  <el-dropdown @command="handleAIAnalysisCommand" :disabled="selectedItems.length === 0">
+                    <el-button
+                      type="primary"
+                      size="small"
+                      :icon="MagicStick"
+                      :disabled="selectedItems.length === 0"
+                      :loading="aiAnalyzing"
+                    >
+                      智能分析
+                      <el-icon class="el-icon--right"><arrow-down /></el-icon>
+                    </el-button>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item command="sentiment">情感分析</el-dropdown-item>
+                        <el-dropdown-item command="keywords">关键词提取</el-dropdown-item>
+                        <el-dropdown-item command="summary">内容摘要生成</el-dropdown-item>
+                        <el-dropdown-item command="category">舆情分类与话题识别</el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
                   <el-button-group>
                     <el-button :type="viewMode === 'list' ? 'primary' : ''" size="small" @click="viewMode = 'list'">
                       <el-icon><List /></el-icon>
@@ -157,39 +187,100 @@
 
           <!-- 列表视图 -->
           <div v-if="viewMode === 'list'" class="list-view">
-            <el-table :data="displayData" stripe style="width: 100%" height="100%">
-              <el-table-column prop="id" label="ID" width="180" />
-              <el-table-column label="类型" width="80">
-                <template #default="{ row }">
-                  <el-tag v-if="isWebMedia(row)" type="primary" size="small">网媒</el-tag>
-                  <el-tag v-else type="success" size="small">微博</el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column label="标题/内容" min-width="300">
-                <template #default="{ row }">
-                  <div class="content-cell">
-                    {{ isWebMedia(row) ? row.title : row.content }}
+            <div class="list-cards">
+              <el-card
+                v-for="item in displayData"
+                :key="item.id"
+                class="list-card"
+                :class="{ 'is-selected': isItemSelected(item) }"
+                shadow="hover"
+                @click="handleCardClick(item)"
+              >
+                <div class="list-card-content">
+                  <div class="list-card-selection">
+                    <el-checkbox
+                      :model-value="isItemSelected(item)"
+                      @click.stop
+                      @change="handleCardCheckboxChange(item, $event)"
+                    />
                   </div>
-                </template>
-              </el-table-column>
-              <el-table-column label="来源" width="150">
-                <template #default="{ row }">
-                  {{ isWebMedia(row) ? row.source : row.userName }}
-                </template>
-              </el-table-column>
-              <el-table-column label="发布时间" width="180">
-                <template #default="{ row }">
-                  {{ formatDate(row.publishTime) }}
-                </template>
-              </el-table-column>
-              <el-table-column label="情感" width="100">
-                <template #default="{ row }">
-                  <el-tag v-if="row.sentiment" :type="getSentimentType(row.sentiment)" size="small">
-                    {{ getSentimentText(row.sentiment) }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-            </el-table>
+
+                  <div class="list-card-info">
+                    <div class="list-card-header">
+                      <div class="header-left">
+                        <el-tag v-if="isWebMedia(item)" type="primary" size="small">网媒</el-tag>
+                        <el-tag v-else type="success" size="small">微博</el-tag>
+                        <span class="item-id">{{ item.id }}</span>
+                      </div>
+                      <div class="header-right">
+                        <span class="item-time">{{ formatDate(item.publishTime) }}</span>
+                        <el-tag v-if="item.sentiment" :type="getSentimentType(item.sentiment)" size="small">
+                          {{ getSentimentText(item.sentiment) }}
+                        </el-tag>
+                      </div>
+                    </div>
+
+                    <div class="list-card-body">
+                      <div class="item-title">
+                        {{ isWebMedia(item) ? item.title : item.content }}
+                      </div>
+                      <div class="item-meta">
+                        <span class="meta-label">来源：</span>
+                        <span class="meta-value">
+                          {{ isWebMedia(item) ? item.source : item.userName }}
+                        </span>
+                      </div>
+
+                      <!-- AI分析结果 -->
+                      <div v-if="hasAIResult(item)" class="ai-result-section">
+                        <el-divider content-position="left">
+                          <span class="ai-result-title">AI分析结果</span>
+                        </el-divider>
+
+                        <!-- 情感分析 -->
+                        <div v-if="item.sentiment" class="ai-result-item">
+                          <span class="result-label">情感分析：</span>
+                          <el-tag :type="getSentimentType(item.sentiment)" size="small">
+                            {{ getSentimentText(item.sentiment) }}
+                          </el-tag>
+                          <span v-if="item.sentimentScore" class="result-score">
+                            (分数: {{ item.sentimentScore }})
+                          </span>
+                        </div>
+
+                        <!-- 关键词 -->
+                        <div v-if="item.aiKeywords && item.aiKeywords.length > 0" class="ai-result-item">
+                          <span class="result-label">关键词：</span>
+                          <div class="keywords-list">
+                            <el-tag
+                              v-for="(keyword, index) in item.aiKeywords"
+                              :key="index"
+                              type="info"
+                              size="small"
+                              style="margin: 2px 4px 2px 0"
+                            >
+                              {{ keyword }}
+                            </el-tag>
+                          </div>
+                        </div>
+
+                        <!-- 摘要 -->
+                        <div v-if="item.aiSummary" class="ai-result-item">
+                          <span class="result-label">内容摘要：</span>
+                          <div class="result-summary">{{ item.aiSummary }}</div>
+                        </div>
+
+                        <!-- 分类 -->
+                        <div v-if="item.aiCategory" class="ai-result-item">
+                          <span class="result-label">舆情分类：</span>
+                          <el-tag type="primary" size="small">{{ item.aiCategory }}</el-tag>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </el-card>
+            </div>
 
             <!-- 分页 -->
             <div class="pagination">
@@ -212,8 +303,17 @@
                 v-for="item in displayData"
                 :key="item.id"
                 class="data-card"
+                :class="{ 'is-selected': isItemSelected(item) }"
                 shadow="hover"
+                @click="handleCardClick(item)"
               >
+                <div class="card-selection">
+                  <el-checkbox
+                    :model-value="isItemSelected(item)"
+                    @click.stop
+                    @change="handleCardCheckboxChange(item, $event)"
+                  />
+                </div>
                 <div class="card-content">
                   <div class="card-header-info">
                     <el-tag v-if="isWebMedia(item)" type="primary" size="small">网媒</el-tag>
@@ -362,6 +462,26 @@
                       <div ref="trendencyChartRef" class="chart-container"></div>
                     </div>
                   </el-card>
+
+                  <!-- 对比统计：情感分布对比 -->
+                  <el-card v-if="statsData.webmediaCount > 0 && statsData.weiboCount > 0" class="stat-card full-width">
+                    <div class="stat-card-header">
+                      <span>情感分布对比</span>
+                    </div>
+                    <div class="stat-card-body">
+                      <div ref="sentimentCompareChartRef" class="chart-container-large"></div>
+                    </div>
+                  </el-card>
+
+                  <!-- 对比统计：热度对比 -->
+                  <el-card v-if="statsData.webmediaCount > 0 && statsData.weiboCount > 0" class="stat-card full-width">
+                    <div class="stat-card-header">
+                      <span>热度对比</span>
+                    </div>
+                    <div class="stat-card-body">
+                      <div ref="popularityCompareChartRef" class="chart-container-large"></div>
+                    </div>
+                  </el-card>
                 </div>
               </div>
             </el-tab-pane>
@@ -413,13 +533,17 @@ import {
   User,
   Folder,
   List,
-  Grid
+  Grid,
+  MagicStick,
+  ArrowDown
 } from '@element-plus/icons-vue'
 import { useDataStore } from '@/stores/dataStore'
 import { parseExcelFile, convertToWebMediaData, convertToWeiboData } from '@/utils/excel'
 import { formatDate, formatFileSize } from '@/utils'
 import { isWebMedia } from '@/types'
+import { aiApi } from '@/api/ai'
 import type { UploadFile, UploadRawFile } from 'element-plus'
+import type { SentimentData } from '@/types'
 import dayjs from 'dayjs'
 import * as echarts from 'echarts'
 import type { EChartsOption } from 'echarts'
@@ -477,6 +601,12 @@ const mediaChartRef = ref()
 const userChartRef = ref()
 const trendChartRef = ref()
 const trendencyChartRef = ref()
+const sentimentCompareChartRef = ref()
+const popularityCompareChartRef = ref()
+
+// 选择状态
+const selectedItems = ref<SentimentData[]>([])
+const aiAnalyzing = ref(false)
 
 // 当前数据源的所有数据
 const currentSourceData = computed(() => {
@@ -535,9 +665,9 @@ const displayData = computed(() => {
   return filteredData.value.slice(start, end)
 })
 
-// 统计数据
+// 统计数据（基于过滤后的数据）
 const statsData = computed(() => {
-  const data = currentSourceData.value
+  const data = filteredData.value
 
   if (data.length === 0) {
     return {
@@ -835,6 +965,203 @@ const handlePageChange = () => {
   // 页码改变
 }
 
+// 选择变化处理
+const handleSelectionChange = (selection: SentimentData[]) => {
+  selectedItems.value = selection
+}
+
+// 选择当前页
+const handleSelectCurrentPage = () => {
+  // 列表视图和卡片视图都使用相同的逻辑
+  const currentPageIds = new Set(selectedItems.value.map(item => item.id))
+  displayData.value.forEach(item => {
+    if (!currentPageIds.has(item.id)) {
+      selectedItems.value.push(item)
+    }
+  })
+}
+
+// 检查项目是否被选中
+const isItemSelected = (item: SentimentData) => {
+  return selectedItems.value.some(selected => selected.id === item.id)
+}
+
+// 处理卡片点击
+const handleCardClick = (item: SentimentData) => {
+  const index = selectedItems.value.findIndex(selected => selected.id === item.id)
+  if (index > -1) {
+    selectedItems.value.splice(index, 1)
+  } else {
+    selectedItems.value.push(item)
+  }
+}
+
+// 处理卡片checkbox变化
+const handleCardCheckboxChange = (item: SentimentData, checked: boolean) => {
+  const index = selectedItems.value.findIndex(selected => selected.id === item.id)
+  if (checked && index === -1) {
+    selectedItems.value.push(item)
+  } else if (!checked && index > -1) {
+    selectedItems.value.splice(index, 1)
+  }
+}
+
+// 检查是否有AI分析结果
+const hasAIResult = (item: SentimentData) => {
+  return !!(item.sentiment || item.aiKeywords?.length || item.aiSummary || item.aiCategory)
+}
+
+// 处理AI分析命令
+const handleAIAnalysisCommand = async (command: string) => {
+  if (selectedItems.value.length === 0) {
+    ElMessage.warning('请先选择要分析的数据')
+    return
+  }
+
+  const itemsToAnalyze = selectedItems.value
+  aiAnalyzing.value = true
+
+  try {
+    const commandNames = {
+      sentiment: '情感分析',
+      keywords: '关键词提取',
+      summary: '内容摘要生成',
+      category: '舆情分类与话题识别'
+    }
+
+    ElMessage.info(`开始${commandNames[command]} ${itemsToAnalyze.length} 条数据...`)
+
+    let successCount = 0
+
+    for (const item of itemsToAnalyze) {
+      try {
+        const content = isWebMedia(item) ? `${item.title}\n${item.content}` : item.content
+        const dataType = isWebMedia(item) ? 'webmedia' : 'weibo'
+
+        let updates: any = {}
+
+        switch (command) {
+          case 'sentiment':
+            // 情感分析
+            const sentimentResult = await aiApi.analyzeSentiment(content, dataType)
+            updates = {
+              sentiment: sentimentResult.sentiment.label,
+              sentimentScore: sentimentResult.sentiment.score
+            }
+            break
+
+          case 'keywords':
+            // 关键词提取
+            const keywords = await aiApi.extractKeywords(content, 10)
+            updates = {
+              aiKeywords: keywords.map(k => k.word)
+            }
+            break
+
+          case 'summary':
+            // 内容摘要
+            const summary = await aiApi.generateSummary(content, 200)
+            updates = {
+              aiSummary: summary
+            }
+            break
+
+          case 'category':
+            // 舆情分类
+            const categoryResult = await aiApi.categorizeContent(content)
+            updates = {
+              aiCategory: categoryResult.category
+            }
+            break
+        }
+
+        if (isWebMedia(item)) {
+          await dataStore.updateWebMediaData(item.id, updates)
+        } else {
+          await dataStore.updateWeiboData(item.id, updates)
+        }
+
+        successCount++
+
+        // 延迟避免API限流
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      } catch (error) {
+        console.error(`分析失败 (${item.id}):`, error)
+      }
+    }
+
+    ElMessage.success(`${commandNames[command]}完成！成功 ${successCount}/${itemsToAnalyze.length} 条`)
+
+    // 清空选择
+    selectedItems.value = []
+  } catch (error: any) {
+    console.error('AI分析失败:', error)
+    ElMessage.error(error.message || 'AI分析失败')
+  } finally {
+    aiAnalyzing.value = false
+  }
+}
+
+// AI智能分析（旧版本，保留兼容）
+const handleAIAnalysis = async () => {
+  if (selectedItems.value.length === 0) {
+    ElMessage.warning('请先选择要分析的数据')
+    return
+  }
+
+
+  const itemsToAnalyze = selectedItems.value
+
+  aiAnalyzing.value = true
+
+  try {
+    ElMessage.info(`开始AI分析 ${itemsToAnalyze.length} 条数据...`)
+
+    let successCount = 0
+
+    for (const item of itemsToAnalyze) {
+      try {
+        const content = isWebMedia(item) ? `${item.title}\n${item.content}` : item.content
+        const dataType = isWebMedia(item) ? 'webmedia' : 'weibo'
+
+        const result = await aiApi.comprehensiveAnalysis(content, dataType)
+
+        // 更新数据
+        const updates = {
+          sentiment: result.sentiment.label,
+          sentimentScore: result.sentiment.score,
+          aiKeywords: result.keywords.map(k => k.word),
+          aiSummary: result.summary,
+          aiCategory: result.category
+        }
+
+        if (isWebMedia(item)) {
+          await dataStore.updateWebMediaData(item.id, updates)
+        } else {
+          await dataStore.updateWeiboData(item.id, updates)
+        }
+
+        successCount++
+
+        // 延迟避免API限流
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      } catch (error) {
+        console.error(`分析失败 (${item.id}):`, error)
+      }
+    }
+
+    ElMessage.success(`AI分析完成！成功 ${successCount}/${itemsToAnalyze.length} 条`)
+
+    // 清空选择
+    selectedItems.value = []
+  } catch (error: any) {
+    console.error('AI分析失败:', error)
+    ElMessage.error(error.message || 'AI分析失败')
+  } finally {
+    aiAnalyzing.value = false
+  }
+}
+
 // 获取数据源颜色
 const getSourceColor = (source: DataSource) => {
   if (!source.type) return '#909399'
@@ -879,6 +1206,8 @@ const renderCharts = () => {
     renderUserChart()
     renderTrendChart()
     renderTrendencyChart()
+    renderSentimentCompareChart()
+    renderPopularityCompareChart()
   })
 }
 
@@ -886,7 +1215,7 @@ const renderCharts = () => {
 const renderSentimentChart = () => {
   if (!sentimentChartRef.value) return
 
-  const data = currentSourceData.value
+  const data = filteredData.value
   const positive = data.filter(item => item.sentiment === 'positive').length
   const neutral = data.filter(item => item.sentiment === 'neutral').length
   const negative = data.filter(item => item.sentiment === 'negative').length
@@ -931,7 +1260,7 @@ const renderSentimentChart = () => {
 const renderMediaChart = () => {
   if (!mediaChartRef.value || statsData.value.webmediaCount === 0) return
 
-  const data = currentSourceData.value.filter(item => isWebMedia(item))
+  const data = filteredData.value.filter(item => isWebMedia(item))
   const sourceMap = new Map<string, number>()
 
   data.forEach((item: any) => {
@@ -977,7 +1306,7 @@ const renderMediaChart = () => {
 const renderUserChart = () => {
   if (!userChartRef.value || statsData.value.weiboCount === 0) return
 
-  const data = currentSourceData.value.filter(item => !isWebMedia(item))
+  const data = filteredData.value.filter(item => !isWebMedia(item))
   const userMap = new Map<string, number>()
 
   data.forEach((item: any) => {
@@ -1023,7 +1352,7 @@ const renderUserChart = () => {
 const renderTrendChart = () => {
   if (!trendChartRef.value) return
 
-  const data = currentSourceData.value
+  const data = filteredData.value
   const dateMap = new Map<string, number>()
 
   data.forEach(item => {
@@ -1076,7 +1405,7 @@ const renderTrendChart = () => {
 const renderTrendencyChart = () => {
   if (!trendencyChartRef.value || statsData.value.webmediaCount === 0) return
 
-  const data = currentSourceData.value.filter(item => isWebMedia(item))
+  const data = filteredData.value.filter(item => isWebMedia(item))
   const positive = data.filter(item => item.sentiment === 'positive').length
   const neutral = data.filter(item => item.sentiment === 'neutral').length
   const negative = data.filter(item => item.sentiment === 'negative').length
@@ -1108,6 +1437,164 @@ const renderTrendencyChart = () => {
   chart.setOption(option)
 }
 
+// 情感分布对比图表
+const renderSentimentCompareChart = () => {
+  if (!sentimentCompareChartRef.value || statsData.value.webmediaCount === 0 || statsData.value.weiboCount === 0) return
+
+  const webmediaData = filteredData.value.filter(item => isWebMedia(item))
+  const weiboData = filteredData.value.filter(item => !isWebMedia(item))
+
+  // 统计网媒情感分布
+  const webmediaPositive = webmediaData.filter(item => item.sentiment === 'positive').length
+  const webmediaNeutral = webmediaData.filter(item => item.sentiment === 'neutral').length
+  const webmediaNegative = webmediaData.filter(item => item.sentiment === 'negative').length
+
+  // 统计微博情感分布
+  const weiboPositive = weiboData.filter(item => item.sentiment === 'positive').length
+  const weiboNeutral = weiboData.filter(item => item.sentiment === 'neutral').length
+  const weiboNegative = weiboData.filter(item => item.sentiment === 'negative').length
+
+  const chart = echarts.init(sentimentCompareChartRef.value)
+  const option: EChartsOption = {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' }
+    },
+    legend: {
+      data: ['网媒', '微博']
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: ['正面', '中性', '负面']
+    },
+    yAxis: {
+      type: 'value'
+    },
+    series: [
+      {
+        name: '网媒',
+        type: 'bar',
+        data: [webmediaPositive, webmediaNeutral, webmediaNegative],
+        itemStyle: { color: '#409eff' }
+      },
+      {
+        name: '微博',
+        type: 'bar',
+        data: [weiboPositive, weiboNeutral, weiboNegative],
+        itemStyle: { color: '#67c23a' }
+      }
+    ]
+  }
+  chart.setOption(option)
+}
+
+// 热度对比图表
+const renderPopularityCompareChart = () => {
+  if (!popularityCompareChartRef.value || statsData.value.webmediaCount === 0 || statsData.value.weiboCount === 0) return
+
+  const webmediaData = filteredData.value.filter(item => isWebMedia(item))
+  const weiboData = filteredData.value.filter(item => !isWebMedia(item))
+
+  // 网媒按日期统计发布数量
+  const webmediaDateMap = new Map<string, number>()
+  webmediaData.forEach(item => {
+    const date = dayjs(item.publishTime).format('YYYY-MM-DD')
+    webmediaDateMap.set(date, (webmediaDateMap.get(date) || 0) + 1)
+  })
+
+  // 微博按日期统计发布数量和互动数据
+  const weiboDateMap = new Map<string, number>()
+  const weiboInteractionMap = new Map<string, number>()
+  weiboData.forEach((item: any) => {
+    const date = dayjs(item.publishTime).format('YYYY-MM-DD')
+    weiboDateMap.set(date, (weiboDateMap.get(date) || 0) + 1)
+
+    // 计算每天的总互动数
+    const interaction = (item.likeCount || 0) + (item.commentCount || 0) + (item.repostCount || 0)
+    weiboInteractionMap.set(date, (weiboInteractionMap.get(date) || 0) + interaction)
+  })
+
+  // 获取所有日期并排序
+  const allDates = new Set([...webmediaDateMap.keys(), ...weiboDateMap.keys()])
+  const sortedDates = Array.from(allDates).sort()
+
+  // 构建数据数组
+  const webmediaCount = sortedDates.map(date => webmediaDateMap.get(date) || 0)
+  const weiboCount = sortedDates.map(date => weiboDateMap.get(date) || 0)
+  const weiboInteraction = sortedDates.map(date => weiboInteractionMap.get(date) || 0)
+
+  const chart = echarts.init(popularityCompareChartRef.value)
+  const option: EChartsOption = {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'cross' }
+    },
+    legend: {
+      data: ['网媒发布量', '微博发布量', '微博互动量']
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: sortedDates,
+      axisLabel: {
+        rotate: 45
+      }
+    },
+    yAxis: [
+      {
+        type: 'value',
+        name: '发布量',
+        position: 'left'
+      },
+      {
+        type: 'value',
+        name: '互动量',
+        position: 'right'
+      }
+    ],
+    series: [
+      {
+        name: '网媒发布量',
+        type: 'bar',
+        data: webmediaCount,
+        itemStyle: { color: '#409eff' }
+      },
+      {
+        name: '微博发布量',
+        type: 'bar',
+        data: weiboCount,
+        itemStyle: { color: '#67c23a' }
+      },
+      {
+        name: '微博互动量',
+        type: 'line',
+        yAxisIndex: 1,
+        data: weiboInteraction,
+        smooth: true,
+        itemStyle: { color: '#f56c6c' },
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(245, 108, 108, 0.3)' },
+            { offset: 1, color: 'rgba(245, 108, 108, 0.05)' }
+          ])
+        }
+      }
+    ]
+  }
+  chart.setOption(option)
+}
+
 // 监听tab切换
 watch(activeTab, (newTab) => {
   if (newTab === 'statistics') {
@@ -1122,10 +1609,27 @@ watch(selectedSourceId, () => {
   }
 })
 
+// 监听筛选条件变化
+watch([filterType, dateRange, filterKeyword], () => {
+  if (activeTab.value === 'statistics') {
+    renderCharts()
+  }
+})
+
+// 监听视图模式切换，清空选择
+watch(viewMode, () => {
+  selectedItems.value = []
+})
+
 // 初始化
 onMounted(async () => {
   await dataStore.loadAllData()
   loadDataSources()
+
+  // 如果有数据源且没有选中任何数据源，默认选中第一个
+  if (dataSources.value.length > 0 && !selectedSourceId.value) {
+    selectedSourceId.value = dataSources.value[0].id
+  }
 })
 </script>
 
@@ -1244,7 +1748,7 @@ onMounted(async () => {
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 8px;
 
       .upload-card {
         .upload-area {
@@ -1254,7 +1758,7 @@ onMounted(async () => {
 
           :deep(.el-upload-dragger) {
             width: 100%;
-            padding: 30px 20px;
+            padding: 8px 20px;
           }
 
           .upload-icon {
@@ -1343,6 +1847,11 @@ onMounted(async () => {
           align-items: center;
           margin-bottom: 16px;
 
+          .selected-count {
+            color: #409eff;
+            font-weight: 500;
+          }
+
           .header-actions {
             display: flex;
             align-items: center;
@@ -1356,10 +1865,102 @@ onMounted(async () => {
           flex-direction: column;
           overflow: hidden;
 
-          .content-cell {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+          .list-cards {
+            flex: 1;
+            overflow-y: auto;
+
+            .list-card {
+              width: 100%;
+              margin-bottom: 12px;
+              cursor: pointer;
+              transition: all 0.3s;
+
+              &.is-selected {
+                border-color: #409eff;
+                box-shadow: 0 2px 12px 0 rgba(64, 158, 255, 0.3);
+              }
+
+              &:hover {
+                box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+              }
+
+              :deep(.el-card__body) {
+                padding: 16px;
+              }
+
+              .list-card-content {
+                display: flex;
+                gap: 16px;
+
+                .list-card-selection {
+                  flex-shrink: 0;
+                  padding-top: 4px;
+                }
+
+                .list-card-info {
+                  flex: 1;
+                  min-width: 0;
+
+                  .list-card-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 12px;
+
+                    .header-left {
+                      display: flex;
+                      align-items: center;
+                      gap: 12px;
+
+                      .item-id {
+                        font-size: 12px;
+                        color: #909399;
+                        font-family: monospace;
+                      }
+                    }
+
+                    .header-right {
+                      display: flex;
+                      align-items: center;
+                      gap: 12px;
+
+                      .item-time {
+                        font-size: 13px;
+                        color: #606266;
+                      }
+                    }
+                  }
+
+                  .list-card-body {
+                    .item-title {
+                      font-size: 15px;
+                      font-weight: 500;
+                      color: #303133;
+                      line-height: 1.6;
+                      margin-bottom: 8px;
+                      overflow: hidden;
+                      text-overflow: ellipsis;
+                      display: -webkit-box;
+                      -webkit-line-clamp: 2;
+                      -webkit-box-orient: vertical;
+                    }
+
+                    .item-meta {
+                      font-size: 13px;
+                      color: #606266;
+
+                      .meta-label {
+                        color: #909399;
+                      }
+
+                      .meta-value {
+                        color: #303133;
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
 
@@ -1374,6 +1975,25 @@ onMounted(async () => {
             margin-bottom: 20px;
 
             .data-card {
+              position: relative;
+              cursor: pointer;
+              transition: all 0.3s;
+
+              &.is-selected {
+                border-color: #409eff;
+                box-shadow: 0 2px 12px 0 rgba(64, 158, 255, 0.3);
+              }
+
+              &:hover {
+                transform: translateY(-2px);
+              }
+
+              .card-selection {
+                position: absolute;
+                top: 12px;
+                right: 12px;
+                z-index: 1;
+              }
               .card-content {
                 .card-header-info {
                   display: flex;

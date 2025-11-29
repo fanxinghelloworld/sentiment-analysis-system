@@ -78,17 +78,18 @@ export const validateWeiboData = (data: any[]): { valid: boolean; errors: string
 
 // 转换为网媒数据格式
 export const convertToWebMediaData = (rawData: any[]): WebMediaData[] => {
+  console.log(rawData, 'rawData')
   return rawData.map(item => ({
     id: item.id || generateId('WM'),
-    title: item.title || '',
-    content: item.content || '',
-    source: item.source || '',
-    author: item.author || '',
-    publishTime: item.publishTime || new Date().toISOString(),
-    url: item.url || '',
-    viewCount: Number(item.viewCount) || 0,
-    shareCount: Number(item.shareCount) || 0,
-    mediaType: item.mediaType || '',
+    title: item.标题 || '',
+    content: item.正文 || '',
+    source: item.站点名称 || '',
+    author: item.文章作者 || '',
+    publishTime: item.发布时间 || new Date().toISOString(),
+    url: item.文章链接 || '',
+    viewCount: Number(item.阅读量) || 0,
+    shareCount: Number(item.转发量) || 0,
+    mediaType: item.媒体渠道 || '',
     category: item.category || '',
     keywords: item.keywords || ''
   }))
@@ -98,17 +99,17 @@ export const convertToWebMediaData = (rawData: any[]): WebMediaData[] => {
 export const convertToWeiboData = (rawData: any[]): WeiboData[] => {
   return rawData.map(item => ({
     id: item.id || generateId('WB'),
-    content: item.content || '',
+    content: item.正文 || '',
     userId: item.userId || '',
-    userName: item.userName || '',
-    publishTime: item.publishTime || new Date().toISOString(),
-    likeCount: Number(item.likeCount) || 0,
-    commentCount: Number(item.commentCount) || 0,
-    repostCount: Number(item.repostCount) || 0,
+    userName: item.文章作者 || '',
+    publishTime: item.发布时间 || new Date().toISOString(),
+    likeCount: Number(item.点赞量) || 0,
+    commentCount: Number(item.评论量) || 0,
+    repostCount: Number(item.转发量) || 0,
     isVerified: Boolean(item.isVerified),
     userFollowers: Number(item.userFollowers) || 0,
     topicTags: item.topicTags || '',
-    location: item.location || ''
+    location: item.ip属地 || ''
   }))
 }
 

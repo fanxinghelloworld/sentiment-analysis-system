@@ -56,6 +56,10 @@ export const dbHelper = {
     return await db.webmedia.delete(id)
   },
 
+  async bulkDeleteWebMediaData(ids: string[]) {
+    return await db.webmedia.bulkDelete(ids)
+  },
+
   async clearWebMediaData() {
     return await db.webmedia.clear()
   },
@@ -86,6 +90,10 @@ export const dbHelper = {
 
   async deleteWeiboData(id: string) {
     return await db.weibo.delete(id)
+  },
+
+  async bulkDeleteWeiboData(ids: string[]) {
+    return await db.weibo.bulkDelete(ids)
   },
 
   async clearWeiboData() {

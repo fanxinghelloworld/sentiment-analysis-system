@@ -11,6 +11,7 @@ export const useDataStore = defineStore('data', () => {
   const loading = ref(false)
   const currentDataSource = ref<'all' | 'webmedia' | 'weibo'>('all')
 
+
   // 计算属性
   const allData = computed(() => {
     if (currentDataSource.value === 'webmedia') return webmediaList.value
@@ -134,6 +135,46 @@ export const useDataStore = defineStore('data', () => {
     }
   }
 
+  async function deleteWebMediaData(id: string) {
+    try {
+      await dbHelper.deleteWebMediaData(id)
+      await loadWebMediaData()
+    } catch (error) {
+      console.error('删除网媒数据失败：', error)
+      throw error
+    }
+  }
+
+  async function bulkDeleteWebMediaData(ids: string[]) {
+    try {
+      await dbHelper.bulkDeleteWebMediaData(ids)
+      await loadWebMediaData()
+    } catch (error) {
+      console.error('批量删除网媒数据失败：', error)
+      throw error
+    }
+  }
+
+  async function deleteWeiboData(id: string) {
+    try {
+      await dbHelper.deleteWeiboData(id)
+      await loadWeiboData()
+    } catch (error) {
+      console.error('删除微博数据失败：', error)
+      throw error
+    }
+  }
+
+  async function bulkDeleteWeiboData(ids: string[]) {
+    try {
+      await dbHelper.bulkDeleteWeiboData(ids)
+      await loadWeiboData()
+    } catch (error) {
+      console.error('批量删除微博数据失败：', error)
+      throw error
+    }
+  }
+
   async function clearAllData() {
     try {
       await dbHelper.clearWebMediaData()
@@ -167,6 +208,10 @@ export const useDataStore = defineStore('data', () => {
     addWeiboData,
     updateWebMediaData,
     updateWeiboData,
+    deleteWebMediaData,
+    deleteWeiboData,
+    bulkDeleteWebMediaData,
+    bulkDeleteWeiboData,
     clearAllData,
     setDataSource
   }

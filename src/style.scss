@@ -1,0 +1,65 @@
+// 全局重置
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #333;
+  background-color: #f0f2f5;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+}
+
+// 滚动条样式
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+
+  &:hover {
+    background: #555;
+  }
+}
+
+// 链接样式
+a {
+  text-decoration: none;
+  color: #409eff;
+  transition: color 0.3s;
+
+  &:hover {
+    color: #66b1ff;
+  }
+}
+
+// 清除浮动
+.clearfix::after {
+  content: '';
+  display: table;
+  clear: both;
+}

@@ -15,7 +15,7 @@
               <el-icon><DataLine /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-label">数据总量</div>
+              <div class="stat-label">舆情总量</div>
               <div class="stat-value">{{ stats.total }}</div>
               <div class="stat-trend">
                 <span class="trend-up">+{{ stats.todayCount }} 今日新增</span>
@@ -60,7 +60,7 @@
               <el-icon><TrendCharts /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-label">情感分析</div>
+              <div class="stat-label">情感分布</div>
               <div class="stat-distribution">
                 <span class="sentiment-item positive">正面 {{ stats.sentimentDistribution.positive }}</span>
                 <span class="sentiment-item neutral">中性 {{ stats.sentimentDistribution.neutral }}</span>
@@ -71,151 +71,174 @@
         </el-card>
       </div>
 
-      <!-- 主要内容区域 -->
+      <!-- 主要内容区域 - 三列布局 -->
       <div class="main-content">
-        <!-- 左侧区域 -->
-        <div class="left-section">
-          <!-- 实时数据流 -->
-          <el-card class="data-stream-card" shadow="hover">
-            <template #header>
-              <div class="card-header">
-                <span class="card-title">
-                  <el-icon class="streaming-icon"><Connection /></el-icon>
-                  实时数据流
-                </span>
-                <el-tag :type="isStreaming ? 'success' : 'info'" size="small">
-                  {{ isStreaming ? '推送中' : '已暂停' }}
-                </el-tag>
-                <el-switch
-                  v-model="isStreaming"
-                  active-text="推送"
-                  inactive-text="暂停"
-                  @change="handleStreamToggle"
-                />
-              </div>
-            </template>
-            <div class="data-stream">
-              <TransitionGroup name="stream-item" tag="div" class="stream-list">
-                <div
-                  v-for="item in streamData"
-                  :key="item.id"
-                  class="stream-item"
-                >
-                  <div class="stream-item-header">
-                    <el-tag :type="isWebMedia(item) ? 'primary' : 'success'" size="small">
-                      {{ isWebMedia(item) ? '网媒' : '微博' }}
-                    </el-tag>
-                    <el-tag
-                      v-if="item.sentiment"
-                      :type="getSentimentType(item.sentiment)"
-                      size="small"
-                    >
-                      {{ getSentimentText(item.sentiment) }}
-                    </el-tag>
-                    <span class="stream-time">{{ formatStreamTime(item.streamTime) }}</span>
-                  </div>
-                  <div class="stream-item-content">
-                    {{ isWebMedia(item) ? item.title : item.content.substring(0, 80) }}...
-                  </div>
-                  <div class="stream-item-meta">
-                    <span>来源: {{ isWebMedia(item) ? item.source : item.userName }}</span>
-                  </div>
-                </div>
-              </TransitionGroup>
-            </div>
-          </el-card>
+        <!-- 左侧：网媒数据专区 -->
+        <div class="left-section webmedia-section">
+          <div class="section-header">
+            <el-icon><Document /></el-icon>
+            <span>网媒数据专区</span>
+          </div>
 
-          <!-- 热点话题 -->
-          <el-card class="hot-topics-card" shadow="hover">
+          <!-- 网媒趋势图 -->
+          <el-card class="chart-card" shadow="hover">
             <template #header>
               <div class="card-header">
-                <span class="card-title">
-                  <el-icon><Lightning /></el-icon>
-                  热点话题
-                </span>
-              </div>
-            </template>
-            <div class="hot-topics">
-              <div
-                v-for="(topic, index) in hotTopics"
-                :key="index"
-                class="topic-item"
-              >
-                <div class="topic-rank" :class="'rank-' + (index + 1)">{{ index + 1 }}</div>
-                <div class="topic-info">
-                  <div class="topic-keyword">{{ topic.keyword }}</div>
-                  <div class="topic-count">{{ topic.count }} 条相关</div>
-                </div>
-                <div class="topic-trend">
-                  <el-icon v-if="topic.trend === 'up'" color="#f56c6c"><CaretTop /></el-icon>
-                  <el-icon v-else-if="topic.trend === 'down'" color="#67c23a"><CaretBottom /></el-icon>
-                  <el-icon v-else color="#909399"><Minus /></el-icon>
-                </div>
-              </div>
-            </div>
-          </el-card>
-        </div>
-
-        <!-- 中间区域 -->
-        <div class="center-section">
-          <!-- 情感趋势图 -->
-          <el-card class="sentiment-trend-card" shadow="hover">
-            <template #header>
-              <div class="card-header">
-                <span class="card-title">
-                  <el-icon><TrendCharts /></el-icon>
-                  情感分析趋势
-                </span>
-                <el-radio-group v-model="trendPeriod" size="small" @change="updateSentimentTrend">
-                  <el-radio-button label="24h">24小时</el-radio-button>
-                  <el-radio-button label="7d">7天</el-radio-button>
-                  <el-radio-button label="30d">30天</el-radio-button>
+                <span class="card-title">网媒趋势分析</span>
+                <el-radio-group v-model="webmediaPeriod" size="small" @change="updateWebmediaTrend">
+                  <el-radio-button label="24h">24h</el-radio-button>
+                  <el-radio-button label="7d">7d</el-radio-button>
                 </el-radio-group>
               </div>
             </template>
-            <div ref="sentimentTrendRef" class="chart-container"></div>
+            <div ref="webmediaTrendRef" class="chart-container-medium"></div>
           </el-card>
 
-          <!-- 数据类型分布 -->
-          <el-card class="data-type-card" shadow="hover">
+          <!-- 网媒情感分布 -->
+          <el-card class="chart-card" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <span class="card-title">网媒情感分布</span>
+              </div>
+            </template>
+            <div ref="webmediaSentimentRef" class="chart-container-small"></div>
+          </el-card>
+
+          <!-- 热门报道 -->
+          <el-card class="list-card" shadow="hover">
             <template #header>
               <div class="card-header">
                 <span class="card-title">
-                  <el-icon><PieChart /></el-icon>
-                  数据类型分布
+                  <el-icon><Reading /></el-icon>
+                  热门报道
                 </span>
               </div>
             </template>
-            <div ref="dataTypeRef" class="chart-container-small"></div>
+            <div class="hot-list">
+              <div
+                v-for="(item, index) in hotWebmedia"
+                :key="index"
+                class="hot-item"
+              >
+                <div class="hot-rank" :class="'rank-' + (index + 1)">{{ index + 1 }}</div>
+                <div class="hot-info">
+                  <div class="hot-title">{{ item.title }}</div>
+                  <div class="hot-meta">
+                    <span>{{ item.source }}</span>
+                    <span>{{ item.viewCount }} 阅读</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </el-card>
         </div>
 
-        <!-- 右侧区域 -->
-        <div class="right-section">
-          <!-- 关键词云 -->
-          <el-card class="keywords-cloud-card" shadow="hover">
+        <!-- 中间：综合对比分析区 -->
+        <div class="center-section analysis-section">
+          <div class="section-header">
+            <el-icon><DataAnalysis /></el-icon>
+            <span>综合对比分析</span>
+          </div>
+
+          <!-- 热词词云 -->
+          <el-card class="chart-card" shadow="hover">
             <template #header>
               <div class="card-header">
                 <span class="card-title">
                   <el-icon><Management /></el-icon>
-                  关键词云
+                  热词词云
                 </span>
               </div>
             </template>
-            <div ref="keywordsCloudRef" class="chart-container"></div>
+            <div ref="wordCloudRef" class="chart-container-large"></div>
           </el-card>
 
-          <!-- 情感分布饼图 -->
-          <el-card class="sentiment-pie-card" shadow="hover">
+          <!-- 数据源对比 -->
+          <el-card class="chart-card" shadow="hover">
             <template #header>
               <div class="card-header">
                 <span class="card-title">
-                  <el-icon><DataAnalysis /></el-icon>
-                  情感分布
+                  <el-icon><PieChart /></el-icon>
+                  数据源对比
                 </span>
               </div>
             </template>
-            <div ref="sentimentPieRef" class="chart-container-small"></div>
+            <div ref="dataCompareRef" class="chart-container-medium"></div>
+          </el-card>
+
+          <!-- 关联分析 -->
+          <el-card class="chart-card" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <span class="card-title">
+                  <el-icon><Connection /></el-icon>
+                  情感关联分析
+                </span>
+              </div>
+            </template>
+            <div ref="correlationRef" class="chart-container-medium"></div>
+          </el-card>
+        </div>
+
+        <!-- 右侧：微博数据专区 -->
+        <div class="right-section weibo-section">
+          <div class="section-header">
+            <el-icon><ChatDotRound /></el-icon>
+            <span>微博数据专区</span>
+          </div>
+
+          <!-- 微博趋势图 -->
+          <el-card class="chart-card" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <span class="card-title">微博趋势分析</span>
+                <el-radio-group v-model="weiboPeriod" size="small" @change="updateWeiboTrend">
+                  <el-radio-button label="24h">24h</el-radio-button>
+                  <el-radio-button label="7d">7d</el-radio-button>
+                </el-radio-group>
+              </div>
+            </template>
+            <div ref="weiboTrendRef" class="chart-container-medium"></div>
+          </el-card>
+
+          <!-- 微博情感分布 -->
+          <el-card class="chart-card" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <span class="card-title">微博情感分布</span>
+              </div>
+            </template>
+            <div ref="weiboSentimentRef" class="chart-container-small"></div>
+          </el-card>
+
+          <!-- 热门话题 -->
+          <el-card class="list-card" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <span class="card-title">
+                  <el-icon><Lightning /></el-icon>
+                  热门话题
+                </span>
+              </div>
+            </template>
+            <div class="hot-list">
+              <div
+                v-for="(topic, index) in hotTopics"
+                :key="index"
+                class="hot-item"
+              >
+                <div class="hot-rank" :class="'rank-' + (index + 1)">{{ index + 1 }}</div>
+                <div class="hot-info">
+                  <div class="hot-title">{{ topic.keyword }}</div>
+                  <div class="hot-meta">
+                    <span>{{ topic.count }} 条相关</span>
+                    <el-icon v-if="topic.trend === 'up'" color="#f56c6c" style="margin-left: 8px;">
+                      <CaretTop />
+                    </el-icon>
+                  </div>
+                </div>
+              </div>
+            </div>
           </el-card>
         </div>
       </div>
@@ -236,12 +259,11 @@ import {
   Management,
   DataAnalysis,
   CaretTop,
-  CaretBottom,
-  Minus
+  Reading
 } from '@element-plus/icons-vue'
 import { useDataStore } from '@/stores/dataStore'
 import { isWebMedia } from '@/types'
-import type { SentimentData } from '@/types'
+import type { SentimentData, WebMediaData, WeiboData } from '@/types'
 import dayjs from 'dayjs'
 import * as echarts from 'echarts'
 import type { EChartsOption } from 'echarts'
@@ -262,12 +284,10 @@ const updateScale = () => {
   const windowWidth = window.innerWidth
   const windowHeight = window.innerHeight
 
-  // 计算缩放比例，取宽高中较小的比例以确保内容完全显示
   const scaleX = windowWidth / BASE_WIDTH
   const scaleY = windowHeight / BASE_HEIGHT
   const scale = Math.min(scaleX, scaleY)
 
-  // 计算偏移量以居中显示
   const offsetX = (windowWidth - BASE_WIDTH * scale) / 2
   const offsetY = (windowHeight - BASE_HEIGHT * scale) / 2
 
@@ -278,7 +298,6 @@ const updateScale = () => {
     top: `${offsetY}px`
   }
 
-  // 缩放后需要重新渲染图表
   nextTick(() => {
     renderAllCharts()
   })
@@ -287,11 +306,6 @@ const updateScale = () => {
 // 时间显示
 const currentTime = ref('')
 let timeInterval: NodeJS.Timeout | null = null
-
-// 实时数据流
-const streamData = ref<(SentimentData & { streamTime: number })[]>([])
-const isStreaming = ref(true)
-let streamInterval: NodeJS.Timeout | null = null
 
 // 统计数据
 const stats = computed(() => dataStore.statistics)
@@ -307,147 +321,83 @@ const weiboPercent = computed(() => {
   return Math.round((stats.value.weiboCount / stats.value.total) * 100)
 })
 
-// 热点话题
+// 图表周期
+const webmediaPeriod = ref('24h')
+const weiboPeriod = ref('24h')
+
+// 热门内容
+const hotWebmedia = ref<Array<{ title: string; source: string; viewCount: number }>>([])
 const hotTopics = ref<Array<{ keyword: string; count: number; trend: 'up' | 'down' | 'stable' }>>([])
 
-// 图表周期
-const trendPeriod = ref('24h')
-
 // 图表refs
-const sentimentTrendRef = ref()
-const dataTypeRef = ref()
-const keywordsCloudRef = ref()
-const sentimentPieRef = ref()
+const webmediaTrendRef = ref()
+const webmediaSentimentRef = ref()
+const weiboTrendRef = ref()
+const weiboSentimentRef = ref()
+const wordCloudRef = ref()
+const dataCompareRef = ref()
+const correlationRef = ref()
 
 // 图表实例
-let sentimentTrendChart: echarts.ECharts | null = null
-let dataTypeChart: echarts.ECharts | null = null
-let keywordsCloudChart: echarts.ECharts | null = null
-let sentimentPieChart: echarts.ECharts | null = null
+let webmediaTrendChart: echarts.ECharts | null = null
+let webmediaSentimentChart: echarts.ECharts | null = null
+let weiboTrendChart: echarts.ECharts | null = null
+let weiboSentimentChart: echarts.ECharts | null = null
+let wordCloudChart: echarts.ECharts | null = null
+let dataCompareChart: echarts.ECharts | null = null
+let correlationChart: echarts.ECharts | null = null
 
 // 更新当前时间
 const updateTime = () => {
   currentTime.value = dayjs().format('YYYY-MM-DD HH:mm:ss')
 }
 
-// 格式化流式时间
-const formatStreamTime = (timestamp: number) => {
-  const now = Date.now()
-  const diff = Math.floor((now - timestamp) / 1000)
+// 提取热门网媒
+const extractHotWebmedia = () => {
+  const webmediaData = dataStore.webmediaData
+  console.log('网媒数据数量:', webmediaData.length)
 
-  if (diff < 60) return `${diff}秒前`
-  if (diff < 3600) return `${Math.floor(diff / 60)}分钟前`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}小时前`
-  return dayjs(timestamp).format('MM-DD HH:mm')
-}
-
-// 获取情感类型
-const getSentimentType = (sentiment: string) => {
-  switch (sentiment) {
-    case 'positive':
-      return 'success'
-    case 'negative':
-      return 'danger'
-    case 'neutral':
-      return 'info'
-    default:
-      return 'info'
-  }
-}
-
-// 获取情感文本
-const getSentimentText = (sentiment: string) => {
-  switch (sentiment) {
-    case 'positive':
-      return '正面'
-    case 'negative':
-      return '负面'
-    case 'neutral':
-      return '中性'
-    default:
-      return '未知'
-  }
-}
-
-// 模拟实时推送
-const simulateRealTimeStream = () => {
-  if (!isStreaming.value) return
-
-  const allData = dataStore.allData
-  if (allData.length === 0) return
-
-  // 随机选择1-3条数据
-  const count = Math.floor(Math.random() * 3) + 1
-  const newItems: (SentimentData & { streamTime: number })[] = []
-
-  for (let i = 0; i < count; i++) {
-    const randomIndex = Math.floor(Math.random() * allData.length)
-    const item = allData[randomIndex]
-    newItems.push({
-      ...item,
-      streamTime: Date.now() + i * 100
-    })
+  if (webmediaData.length === 0) {
+    hotWebmedia.value = []
+    return
   }
 
-  // 添加到流数据开头
-  streamData.value = [...newItems, ...streamData.value].slice(0, 20)
+  const sorted = [...webmediaData]
+    .sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0))
+    .slice(0, 8)
+
+  hotWebmedia.value = sorted.map(item => ({
+    title: item.title,
+    source: item.source,
+    viewCount: item.viewCount || 0
+  }))
+
+  console.log('热门网媒:', hotWebmedia.value.length)
 }
 
-// 处理推送开关
-const handleStreamToggle = (value: boolean) => {
-  if (value) {
-    startStreaming()
-  } else {
-    stopStreaming()
-  }
-}
-
-// 开始推送
-const startStreaming = () => {
-  if (streamInterval) return
-
-  // 立即推送一次
-  simulateRealTimeStream()
-
-  // 每2-5秒推送一次
-  const scheduleNext = () => {
-    const delay = Math.random() * 3000 + 2000
-    streamInterval = setTimeout(() => {
-      simulateRealTimeStream()
-      if (isStreaming.value) {
-        scheduleNext()
-      }
-    }, delay)
-  }
-
-  scheduleNext()
-}
-
-// 停止推送
-const stopStreaming = () => {
-  if (streamInterval) {
-    clearTimeout(streamInterval)
-    streamInterval = null
-  }
-}
-
-// 提取热点话题
+// 提取热门话题
 const extractHotTopics = () => {
-  const allData = dataStore.allData
+  const weiboData = dataStore.weiboData
+  console.log('微博数据数量:', weiboData.length)
+
+  if (weiboData.length === 0) {
+    hotTopics.value = []
+    return
+  }
+
   const keywordMap = new Map<string, number>()
 
-  allData.forEach(item => {
-    if (item.aiKeywords && item.aiKeywords.length > 0) {
-      item.aiKeywords.forEach(keyword => {
-        keywordMap.set(keyword, (keywordMap.get(keyword) || 0) + 1)
+  weiboData.forEach(item => {
+    if (item.topicTags && item.topicTags.length > 0) {
+      item.topicTags.forEach(tag => {
+        keywordMap.set(tag, (keywordMap.get(tag) || 0) + 1)
       })
     }
   })
 
   if (keywordMap.size === 0) {
-    allData.forEach(item => {
-      const content = isWebMedia(item) ? item.title : item.content
-      const words = content.match(/[\u4e00-\u9fa5]{2,}/g) || []
+    weiboData.forEach(item => {
+      const words = item.content.match(/[\u4e00-\u9fa5]{2,}/g) || []
       words.forEach(word => {
         keywordMap.set(word, (keywordMap.get(word) || 0) + 1)
       })
@@ -456,7 +406,7 @@ const extractHotTopics = () => {
 
   const sortedTopics = Array.from(keywordMap.entries())
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
+    .slice(0, 8)
     .map(([keyword, count]) => ({
       keyword,
       count,
@@ -464,36 +414,33 @@ const extractHotTopics = () => {
     }))
 
   hotTopics.value = sortedTopics
+  console.log('热门话题:', hotTopics.value.length)
 }
 
-// 渲染情感趋势图
-const renderSentimentTrend = () => {
-  if (!sentimentTrendRef.value) return
-
-  const allData = dataStore.allData
-  const now = dayjs()
-  let days = 1
-  let format = 'HH:mm'
-
-  if (trendPeriod.value === '7d') {
-    days = 7
-    format = 'MM-DD'
-  } else if (trendPeriod.value === '30d') {
-    days = 30
-    format = 'MM-DD'
+// 渲染网媒趋势图
+const renderWebmediaTrend = () => {
+  if (!webmediaTrendRef.value) {
+    console.warn('网媒趋势图容器未找到')
+    return
   }
+
+  const webmediaData = dataStore.webmediaData
+  console.log('渲染网媒趋势图 - 数据量:', webmediaData.length)
+
+  const now = dayjs()
+  const hours = webmediaPeriod.value === '24h' ? 24 : 168
 
   const timePoints: string[] = []
   const positiveData: number[] = []
   const neutralData: number[] = []
   const negativeData: number[] = []
 
-  if (trendPeriod.value === '24h') {
+  if (webmediaPeriod.value === '24h') {
     for (let i = 23; i >= 0; i--) {
       const time = now.subtract(i, 'hour')
-      timePoints.push(time.format(format))
+      timePoints.push(time.format('HH:mm'))
 
-      const hourData = allData.filter(item => {
+      const hourData = webmediaData.filter(item => {
         const itemTime = dayjs(item.publishTime)
         return itemTime.isSame(time, 'hour')
       })
@@ -503,11 +450,11 @@ const renderSentimentTrend = () => {
       negativeData.push(hourData.filter(item => item.sentiment === 'negative').length)
     }
   } else {
-    for (let i = days - 1; i >= 0; i--) {
+    for (let i = 6; i >= 0; i--) {
       const time = now.subtract(i, 'day')
-      timePoints.push(time.format(format))
+      timePoints.push(time.format('MM-DD'))
 
-      const dayData = allData.filter(item => {
+      const dayData = webmediaData.filter(item => {
         const itemTime = dayjs(item.publishTime)
         return itemTime.isSame(time, 'day')
       })
@@ -518,60 +465,37 @@ const renderSentimentTrend = () => {
     }
   }
 
-  if (!sentimentTrendChart) {
-    sentimentTrendChart = echarts.init(sentimentTrendRef.value)
+  if (!webmediaTrendChart) {
+    webmediaTrendChart = echarts.init(webmediaTrendRef.value)
   }
 
   const option: EChartsOption = {
     tooltip: {
-      trigger: 'axis',
-      axisPointer: {
-        type: 'cross'
-      }
+      trigger: 'axis'
     },
     legend: {
       data: ['正面', '中性', '负面'],
       top: '5%',
-      left: 'center',
-      textStyle: {
-        color: '#fff',
-        fontSize: 13
-      },
-      itemWidth: 20,
-      itemHeight: 12,
-      itemGap: 20
+      textStyle: { color: '#fff', fontSize: 11 }
     },
     grid: {
-      left: '3%',
-      right: '4%',
-      top: '18%',
-      bottom: trendPeriod.value === '24h' ? '8%' : '15%',
+      left: '8%',
+      right: '5%',
+      top: '22%',
+      bottom: '12%',
       containLabel: true
     },
     xAxis: {
       type: 'category',
       data: timePoints,
-      axisLabel: {
-        color: '#fff',
-        rotate: trendPeriod.value === '24h' ? 0 : 45,
-        fontSize: 11,
-        margin: 10
-      },
-      axisLine: {
-        lineStyle: { color: '#4a5568' }
-      }
+      axisLabel: { color: '#fff', fontSize: 10 },
+      axisLine: { lineStyle: { color: '#4a5568' } }
     },
     yAxis: {
       type: 'value',
-      axisLabel: {
-        color: '#fff'
-      },
-      axisLine: {
-        lineStyle: { color: '#4a5568' }
-      },
-      splitLine: {
-        lineStyle: { color: '#2d3748' }
-      }
+      axisLabel: { color: '#fff', fontSize: 10 },
+      axisLine: { lineStyle: { color: '#4a5568' } },
+      splitLine: { lineStyle: { color: '#2d3748' } }
     },
     series: [
       {
@@ -580,12 +504,7 @@ const renderSentimentTrend = () => {
         data: positiveData,
         smooth: true,
         itemStyle: { color: '#67c23a' },
-        areaStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(103, 194, 58, 0.3)' },
-            { offset: 1, color: 'rgba(103, 194, 58, 0.05)' }
-          ])
-        }
+        lineStyle: { width: 2 }
       },
       {
         name: '中性',
@@ -593,12 +512,7 @@ const renderSentimentTrend = () => {
         data: neutralData,
         smooth: true,
         itemStyle: { color: '#909399' },
-        areaStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(144, 147, 153, 0.3)' },
-            { offset: 1, color: 'rgba(144, 147, 153, 0.05)' }
-          ])
-        }
+        lineStyle: { width: 2 }
       },
       {
         name: '负面',
@@ -606,31 +520,38 @@ const renderSentimentTrend = () => {
         data: negativeData,
         smooth: true,
         itemStyle: { color: '#f56c6c' },
-        areaStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(245, 108, 108, 0.3)' },
-            { offset: 1, color: 'rgba(245, 108, 108, 0.05)' }
-          ])
-        }
+        lineStyle: { width: 2 }
       }
     ]
   }
-  sentimentTrendChart.setOption(option)
+  webmediaTrendChart.setOption(option)
 }
 
-// 更新情感趋势
-const updateSentimentTrend = () => {
+// 更新网媒趋势
+const updateWebmediaTrend = () => {
   nextTick(() => {
-    renderSentimentTrend()
+    renderWebmediaTrend()
   })
 }
 
-// 渲染数据类型分布
-const renderDataType = () => {
-  if (!dataTypeRef.value) return
+// 渲染网媒情感分布
+const renderWebmediaSentiment = () => {
+  if (!webmediaSentimentRef.value) {
+    console.warn('网媒情感分布图容器未找到')
+    return
+  }
 
-  if (!dataTypeChart) {
-    dataTypeChart = echarts.init(dataTypeRef.value)
+  const webmediaData = dataStore.webmediaData
+  console.log('渲染网媒情感分布 - 数据量:', webmediaData.length)
+
+  const positive = webmediaData.filter(item => item.sentiment === 'positive').length
+  const neutral = webmediaData.filter(item => item.sentiment === 'neutral').length
+  const negative = webmediaData.filter(item => item.sentiment === 'negative').length
+
+  console.log('网媒情感分布 - 正面:', positive, '中性:', neutral, '负面:', negative)
+
+  if (!webmediaSentimentChart) {
+    webmediaSentimentChart = echarts.init(webmediaSentimentRef.value)
   }
 
   const option: EChartsOption = {
@@ -640,44 +561,195 @@ const renderDataType = () => {
     },
     legend: {
       orient: 'vertical',
-      right: '10%',
+      right: '5%',
       top: 'center',
-      textStyle: {
-        color: '#fff'
-      }
+      textStyle: { color: '#fff', fontSize: 11 }
     },
     series: [
       {
         type: 'pie',
-        radius: ['40%', '70%'],
-        center: ['35%', '50%'],
-        avoidLabelOverlap: false,
-        label: {
-          show: false
-        },
-        emphasis: {
-          label: {
-            show: true,
-            fontSize: 16,
-            fontWeight: 'bold',
-            color: '#fff'
-          }
-        },
+        radius: ['35%', '65%'],
+        center: ['40%', '50%'],
         data: [
-          { value: stats.value.webmediaCount, name: '网媒数据', itemStyle: { color: '#409eff' } },
-          { value: stats.value.weiboCount, name: '微博数据', itemStyle: { color: '#67c23a' } }
-        ]
+          { value: positive, name: '正面', itemStyle: { color: '#67c23a' } },
+          { value: neutral, name: '中性', itemStyle: { color: '#909399' } },
+          { value: negative, name: '负面', itemStyle: { color: '#f56c6c' } }
+        ],
+        label: {
+          color: '#fff',
+          fontSize: 11
+        }
       }
     ]
   }
-  dataTypeChart.setOption(option)
+  webmediaSentimentChart.setOption(option)
 }
 
-// 渲染关键词云
-const renderKeywordsCloud = () => {
-  if (!keywordsCloudRef.value) return
+// 渲染微博趋势图
+const renderWeiboTrend = () => {
+  if (!weiboTrendRef.value) return
+
+  const weiboData = dataStore.weiboData
+  const now = dayjs()
+
+  const timePoints: string[] = []
+  const positiveData: number[] = []
+  const neutralData: number[] = []
+  const negativeData: number[] = []
+
+  if (weiboPeriod.value === '24h') {
+    for (let i = 23; i >= 0; i--) {
+      const time = now.subtract(i, 'hour')
+      timePoints.push(time.format('HH:mm'))
+
+      const hourData = weiboData.filter(item => {
+        const itemTime = dayjs(item.publishTime)
+        return itemTime.isSame(time, 'hour')
+      })
+
+      positiveData.push(hourData.filter(item => item.sentiment === 'positive').length)
+      neutralData.push(hourData.filter(item => item.sentiment === 'neutral').length)
+      negativeData.push(hourData.filter(item => item.sentiment === 'negative').length)
+    }
+  } else {
+    for (let i = 6; i >= 0; i--) {
+      const time = now.subtract(i, 'day')
+      timePoints.push(time.format('MM-DD'))
+
+      const dayData = weiboData.filter(item => {
+        const itemTime = dayjs(item.publishTime)
+        return itemTime.isSame(time, 'day')
+      })
+
+      positiveData.push(dayData.filter(item => item.sentiment === 'positive').length)
+      neutralData.push(dayData.filter(item => item.sentiment === 'neutral').length)
+      negativeData.push(dayData.filter(item => item.sentiment === 'negative').length)
+    }
+  }
+
+  if (!weiboTrendChart) {
+    weiboTrendChart = echarts.init(weiboTrendRef.value)
+  }
+
+  const option: EChartsOption = {
+    tooltip: {
+      trigger: 'axis'
+    },
+    legend: {
+      data: ['正面', '中性', '负面'],
+      top: '5%',
+      textStyle: { color: '#fff', fontSize: 11 }
+    },
+    grid: {
+      left: '8%',
+      right: '5%',
+      top: '22%',
+      bottom: '12%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: timePoints,
+      axisLabel: { color: '#fff', fontSize: 10 },
+      axisLine: { lineStyle: { color: '#4a5568' } }
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: { color: '#fff', fontSize: 10 },
+      axisLine: { lineStyle: { color: '#4a5568' } },
+      splitLine: { lineStyle: { color: '#2d3748' } }
+    },
+    series: [
+      {
+        name: '正面',
+        type: 'line',
+        data: positiveData,
+        smooth: true,
+        itemStyle: { color: '#67c23a' },
+        lineStyle: { width: 2 }
+      },
+      {
+        name: '中性',
+        type: 'line',
+        data: neutralData,
+        smooth: true,
+        itemStyle: { color: '#909399' },
+        lineStyle: { width: 2 }
+      },
+      {
+        name: '负面',
+        type: 'line',
+        data: negativeData,
+        smooth: true,
+        itemStyle: { color: '#f56c6c' },
+        lineStyle: { width: 2 }
+      }
+    ]
+  }
+  weiboTrendChart.setOption(option)
+}
+
+// 更新微博趋势
+const updateWeiboTrend = () => {
+  nextTick(() => {
+    renderWeiboTrend()
+  })
+}
+
+// 渲染微博情感分布
+const renderWeiboSentiment = () => {
+  if (!weiboSentimentRef.value) return
+
+  const weiboData = dataStore.weiboData
+  const positive = weiboData.filter(item => item.sentiment === 'positive').length
+  const neutral = weiboData.filter(item => item.sentiment === 'neutral').length
+  const negative = weiboData.filter(item => item.sentiment === 'negative').length
+
+  if (!weiboSentimentChart) {
+    weiboSentimentChart = echarts.init(weiboSentimentRef.value)
+  }
+
+  const option: EChartsOption = {
+    tooltip: {
+      trigger: 'item',
+      formatter: '{b}: {c} ({d}%)'
+    },
+    legend: {
+      orient: 'vertical',
+      right: '5%',
+      top: 'center',
+      textStyle: { color: '#fff', fontSize: 11 }
+    },
+    series: [
+      {
+        type: 'pie',
+        radius: ['35%', '65%'],
+        center: ['40%', '50%'],
+        data: [
+          { value: positive, name: '正面', itemStyle: { color: '#67c23a' } },
+          { value: neutral, name: '中性', itemStyle: { color: '#909399' } },
+          { value: negative, name: '负面', itemStyle: { color: '#f56c6c' } }
+        ],
+        label: {
+          color: '#fff',
+          fontSize: 11
+        }
+      }
+    ]
+  }
+  weiboSentimentChart.setOption(option)
+}
+
+// 渲染热词词云
+const renderWordCloud = () => {
+  if (!wordCloudRef.value) {
+    console.warn('词云容器未找到')
+    return
+  }
 
   const allData = dataStore.allData
+  console.log('渲染词云 - 总数据量:', allData.length)
+
   const keywordMap = new Map<string, number>()
 
   allData.forEach(item => {
@@ -700,8 +772,8 @@ const renderKeywordsCloud = () => {
     .sort((a, b) => b.value - a.value)
     .slice(0, 50)
 
-  if (!keywordsCloudChart) {
-    keywordsCloudChart = echarts.init(keywordsCloudRef.value)
+  if (!wordCloudChart) {
+    wordCloudChart = echarts.init(wordCloudRef.value)
   }
 
   const option: EChartsOption = {
@@ -716,10 +788,10 @@ const renderKeywordsCloud = () => {
         top: 'center',
         width: '100%',
         height: '100%',
-        sizeRange: [12, 40],
+        sizeRange: [14, 45],
         rotationRange: [-90, 90],
         rotationStep: 45,
-        gridSize: 8,
+        gridSize: 10,
         drawOutOfBound: false,
         textStyle: {
           fontFamily: 'sans-serif',
@@ -739,100 +811,176 @@ const renderKeywordsCloud = () => {
       }
     ]
   }
-  keywordsCloudChart.setOption(option)
+  wordCloudChart.setOption(option)
 }
 
-// 渲染情感分布饼图
-const renderSentimentPie = () => {
-  if (!sentimentPieRef.value) return
+// 渲染数据源对比
+const renderDataCompare = () => {
+  if (!dataCompareRef.value) return
 
-  if (!sentimentPieChart) {
-    sentimentPieChart = echarts.init(sentimentPieRef.value)
+  if (!dataCompareChart) {
+    dataCompareChart = echarts.init(dataCompareRef.value)
+  }
+
+  const option: EChartsOption = {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'shadow'
+      }
+    },
+    legend: {
+      data: ['网媒', '微博'],
+      top: '5%',
+      textStyle: { color: '#fff', fontSize: 12 }
+    },
+    grid: {
+      left: '8%',
+      right: '5%',
+      top: '22%',
+      bottom: '12%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: ['正面', '中性', '负面'],
+      axisLabel: { color: '#fff', fontSize: 11 },
+      axisLine: { lineStyle: { color: '#4a5568' } }
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: { color: '#fff', fontSize: 10 },
+      axisLine: { lineStyle: { color: '#4a5568' } },
+      splitLine: { lineStyle: { color: '#2d3748' } }
+    },
+    series: [
+      {
+        name: '网媒',
+        type: 'bar',
+        data: [
+          dataStore.webmediaData.filter(item => item.sentiment === 'positive').length,
+          dataStore.webmediaData.filter(item => item.sentiment === 'neutral').length,
+          dataStore.webmediaData.filter(item => item.sentiment === 'negative').length
+        ],
+        itemStyle: { color: '#409eff' }
+      },
+      {
+        name: '微博',
+        type: 'bar',
+        data: [
+          dataStore.weiboData.filter(item => item.sentiment === 'positive').length,
+          dataStore.weiboData.filter(item => item.sentiment === 'neutral').length,
+          dataStore.weiboData.filter(item => item.sentiment === 'negative').length
+        ],
+        itemStyle: { color: '#67c23a' }
+      }
+    ]
+  }
+  dataCompareChart.setOption(option)
+}
+
+// 渲染关联分析
+const renderCorrelation = () => {
+  if (!correlationRef.value) return
+
+  if (!correlationChart) {
+    correlationChart = echarts.init(correlationRef.value)
   }
 
   const option: EChartsOption = {
     tooltip: {
       trigger: 'item',
-      formatter: '{b}: {c} ({d}%)'
+      formatter: '{b}: {c}'
     },
     legend: {
       orient: 'vertical',
-      right: '10%',
+      right: '5%',
       top: 'center',
-      textStyle: {
-        color: '#fff'
-      }
+      textStyle: { color: '#fff', fontSize: 11 }
     },
     series: [
       {
         type: 'pie',
-        radius: '70%',
-        center: ['35%', '50%'],
+        radius: '65%',
+        center: ['40%', '50%'],
         data: [
-          { value: stats.value.sentimentDistribution.positive, name: '正面', itemStyle: { color: '#67c23a' } },
-          { value: stats.value.sentimentDistribution.neutral, name: '中性', itemStyle: { color: '#909399' } },
-          { value: stats.value.sentimentDistribution.negative, name: '负面', itemStyle: { color: '#f56c6c' } }
+          { value: stats.value.webmediaCount, name: '网媒数据', itemStyle: { color: '#409eff' } },
+          { value: stats.value.weiboCount, name: '微博数据', itemStyle: { color: '#67c23a' } }
         ],
+        label: {
+          color: '#fff',
+          fontSize: 11
+        },
         emphasis: {
           itemStyle: {
             shadowBlur: 10,
             shadowOffsetX: 0,
             shadowColor: 'rgba(0, 0, 0, 0.5)'
           }
-        },
-        label: {
-          color: '#fff'
         }
       }
     ]
   }
-  sentimentPieChart.setOption(option)
+  correlationChart.setOption(option)
 }
 
 // 渲染所有图表
 const renderAllCharts = () => {
   nextTick(() => {
-    renderSentimentTrend()
-    renderDataType()
-    renderKeywordsCloud()
-    renderSentimentPie()
+    renderWebmediaTrend()
+    renderWebmediaSentiment()
+    renderWeiboTrend()
+    renderWeiboSentiment()
+    renderWordCloud()
+    renderDataCompare()
+    renderCorrelation()
 
     // 调整图表大小
-    sentimentTrendChart?.resize()
-    dataTypeChart?.resize()
-    keywordsCloudChart?.resize()
-    sentimentPieChart?.resize()
+    webmediaTrendChart?.resize()
+    webmediaSentimentChart?.resize()
+    weiboTrendChart?.resize()
+    weiboSentimentChart?.resize()
+    wordCloudChart?.resize()
+    dataCompareChart?.resize()
+    correlationChart?.resize()
   })
 }
 
 // 初始化
 onMounted(async () => {
+  console.log('=== 大屏初始化开始 ===')
+
   // 加载数据
   await dataStore.loadAllData()
+  console.log('数据加载完成 - 网媒:', dataStore.webmediaData.length, '微博:', dataStore.weiboData.length)
+  console.log('统计数据:', stats.value)
 
   // 更新时间
   updateTime()
   timeInterval = setInterval(updateTime, 1000)
 
-  // 提取热点话题
+  // 提取热门内容
+  extractHotWebmedia()
   extractHotTopics()
 
   // 初始化缩放
   updateScale()
 
-  // 渲染图表
+  // 等待DOM更新后渲染图表
+  await nextTick()
+  console.log('开始渲染图表...')
   renderAllCharts()
 
-  // 开始实时推送
-  startStreaming()
-
-  // 定期更新热点话题
+  // 定期更新热门内容
   setInterval(() => {
+    extractHotWebmedia()
     extractHotTopics()
   }, 30000)
 
   // 监听窗口大小变化
   window.addEventListener('resize', updateScale)
+
+  console.log('=== 大屏初始化完成 ===')
 })
 
 // 清理
@@ -840,13 +988,15 @@ onBeforeUnmount(() => {
   if (timeInterval) {
     clearInterval(timeInterval)
   }
-  stopStreaming()
 
   // 销毁图表实例
-  sentimentTrendChart?.dispose()
-  dataTypeChart?.dispose()
-  keywordsCloudChart?.dispose()
-  sentimentPieChart?.dispose()
+  webmediaTrendChart?.dispose()
+  webmediaSentimentChart?.dispose()
+  weiboTrendChart?.dispose()
+  weiboSentimentChart?.dispose()
+  wordCloudChart?.dispose()
+  dataCompareChart?.dispose()
+  correlationChart?.dispose()
 
   // 移除事件监听
   window.removeEventListener('resize', updateScale)
@@ -857,7 +1007,7 @@ onBeforeUnmount(() => {
 .fullscreen-wrapper {
   width: 100vw;
   height: 100vh;
-  overflow: hidden;
+  overflow-y: auto;
   background: linear-gradient(135deg, #1a1f3a 0%, #2d3561 100%);
   position: relative;
 }
@@ -1001,27 +1151,58 @@ onBeforeUnmount(() => {
 
   .main-content {
     display: grid;
-    grid-template-columns: 350px 1fr 400px;
-    gap: 16px;
-    height: calc(1080px - 260px);
+    grid-template-columns: 400px 1fr 400px;
+    gap: 14px;
+    height: calc(1080px - 232px);
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      margin-bottom: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      border-left: 3px solid;
+
+      &:has(.webmedia-section) {
+        border-color: #409eff;
+      }
+    }
+
+    .webmedia-section .section-header {
+      border-color: #409eff;
+    }
+
+    .weibo-section .section-header {
+      border-color: #67c23a;
+    }
+
+    .analysis-section .section-header {
+      border-color: #e6a23c;
+    }
 
     .left-section,
     .center-section,
     .right-section {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      overflow: hidden;
     }
 
     .el-card {
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.1);
       color: #fff;
+      flex-shrink: 0;
 
       :deep(.el-card__header) {
         background: rgba(255, 255, 255, 0.03);
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 12px 16px;
+        padding: 10px 14px;
       }
 
       .card-header {
@@ -1032,96 +1213,42 @@ onBeforeUnmount(() => {
         .card-title {
           display: flex;
           align-items: center;
-          gap: 8px;
-          font-size: 16px;
+          gap: 6px;
+          font-size: 14px;
           font-weight: 600;
           color: #fff;
-
-          .streaming-icon {
-            animation: pulse 2s ease-in-out infinite;
-          }
         }
       }
     }
 
-    .data-stream-card {
-      height: 404px;
+    .chart-card {
+      margin-bottom: 10px;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      flex-shrink: 0;
 
       :deep(.el-card__body) {
-        flex: 1;
-        overflow: hidden;
-        padding: 0;
-      }
-
-      .data-stream {
+        padding: 10px;
         height: 100%;
-        overflow-y: auto;
-        padding: 12px;
-
-        .stream-list {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .stream-item {
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 8px;
-          padding: 12px;
-          transition: all 0.3s;
-
-          &:hover {
-            background: rgba(255, 255, 255, 0.08);
-            transform: translateX(5px);
-          }
-
-          .stream-item-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
-
-            .stream-time {
-              margin-left: auto;
-              font-size: 12px;
-              color: #909399;
-            }
-          }
-
-          .stream-item-content {
-            font-size: 14px;
-            color: #fff;
-            line-height: 1.6;
-            margin-bottom: 8px;
-          }
-
-          .stream-item-meta {
-            font-size: 12px;
-            color: #909399;
-          }
-        }
       }
     }
 
-    .hot-topics-card {
-      height: 400px;
+    .list-card {
+      flex: 1;
       overflow: hidden;
-      flex-shrink: 0;
 
-      .hot-topics {
-        max-height: 340px;
+      :deep(.el-card__body) {
+        padding: 0;
+        height: 100%;
         overflow-y: auto;
+      }
 
-        .topic-item {
+      .hot-list {
+        padding: 8px;
+
+        .hot-item {
           display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 12px;
+          align-items: flex-start;
+          gap: 10px;
+          padding: 10px;
           border-bottom: 1px solid rgba(255, 255, 255, 0.1);
           transition: all 0.3s;
 
@@ -1133,17 +1260,18 @@ onBeforeUnmount(() => {
             border-bottom: none;
           }
 
-          .topic-rank {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
+          .hot-rank {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 12px;
             background: rgba(255, 255, 255, 0.1);
             color: #fff;
+            flex-shrink: 0;
 
             &.rank-1 {
               background: linear-gradient(135deg, #f56c6c, #ff8787);
@@ -1158,129 +1286,108 @@ onBeforeUnmount(() => {
             }
           }
 
-          .topic-info {
+          .hot-info {
             flex: 1;
+            min-width: 0;
 
-            .topic-keyword {
-              font-size: 14px;
+            .hot-title {
+              font-size: 13px;
               font-weight: 500;
               color: #fff;
               margin-bottom: 4px;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
             }
 
-            .topic-count {
-              font-size: 12px;
+            .hot-meta {
+              font-size: 11px;
               color: #909399;
+              display: flex;
+              align-items: center;
+              gap: 12px;
             }
-          }
-
-          .topic-trend {
-            font-size: 18px;
           }
         }
       }
     }
 
-    .chart-container {
+    .chart-container-large {
       width: 100%;
-      height: 300px;
+      height: 290px;
+    }
+
+    .chart-container-medium {
+      width: 100%;
+      height: 190px;
     }
 
     .chart-container-small {
       width: 100%;
-      height: 250px;
+      height: 170px;
     }
 
-    .sentiment-trend-card {
-      height: 484px;
-      flex-shrink: 0;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
+    // 左侧区域高度分配
+    .left-section {
+      .chart-card:nth-child(2) {
+        height: 240px;
+      }
 
-      :deep(.el-card__body) {
-        flex: 1;
-        overflow: hidden;
+      .chart-card:nth-child(3) {
+        height: 210px;
+      }
+
+      .list-card {
+        height: calc(100% - 240px - 210px - 20px - 40px);
       }
     }
 
-    .data-type-card {
-      height: 320px;
-      flex-shrink: 0;
-      overflow: hidden;
+    // 中间区域高度分配
+    .center-section {
+      .chart-card:nth-child(2) {
+        height: 330px;
+      }
 
-      :deep(.el-card__body) {
-        height: 100%;
-        overflow: hidden;
+      .chart-card:nth-child(3) {
+        height: 225px;
+      }
+
+      .chart-card:nth-child(4) {
+        height: 225px;
       }
     }
 
-    .keywords-cloud-card {
-      height: 484px;
-      flex-shrink: 0;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-
-      :deep(.el-card__body) {
-        flex: 1;
-        overflow: hidden;
+    // 右侧区域高度分配
+    .right-section {
+      .chart-card:nth-child(2) {
+        height: 240px;
       }
-    }
 
-    .sentiment-pie-card {
-      height: 320px;
-      flex-shrink: 0;
-      overflow: hidden;
+      .chart-card:nth-child(3) {
+        height: 210px;
+      }
 
-      :deep(.el-card__body) {
-        height: 100%;
-        overflow: hidden;
+      .list-card {
+        height: calc(100% - 240px - 210px - 20px - 40px);
       }
     }
   }
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.stream-item-enter-active {
-  transition: all 0.5s ease;
-}
-
-.stream-item-enter-from {
-  opacity: 0;
-  transform: translateY(-30px);
-}
-
-.stream-item-leave-active {
-  transition: all 0.5s ease;
-}
-
-.stream-item-leave-to {
-  opacity: 0;
-  transform: translateX(30px);
-}
-
+// 滚动条样式
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 3px;
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
+  border-radius: 2px;
 
   &:hover {
     background: rgba(255, 255, 255, 0.3);

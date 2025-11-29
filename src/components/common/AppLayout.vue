@@ -67,12 +67,8 @@ const handleDashboardClick = (e: MouseEvent) => {
   // 在新窗口打开全屏大屏
   const width = window.screen.availWidth
   const height = window.screen.availHeight
-
-  window.open(
-    '/dashboard/fullscreen',
-    '_blank',
-    `width=${width},height=${height},left=0,top=0,fullscreen=yes,toolbar=no,menubar=no,location=no,status=no`
-  )
+  const url = router.resolve({ path: '/dashboard/fullscreen' })
+  window.open(url.href, '_blank');
 }
 </script>
 

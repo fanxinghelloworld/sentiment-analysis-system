@@ -200,6 +200,9 @@ export const useDataStore = defineStore('data', () => {
     // 计算属性
     allData,
     statistics,
+    // 数据别名（为了向后兼容）
+    webmediaData: webmediaList,
+    weiboData: weiboList,
     // 方法
     loadWebMediaData,
     loadWeiboData,

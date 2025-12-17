@@ -114,22 +114,29 @@
                 </span>
               </div>
             </template>
-            <div class="hot-list">
-              <div
-                v-for="(item, index) in hotWebmedia"
-                :key="index"
-                class="hot-item"
-              >
-                <div class="hot-rank" :class="'rank-' + (index + 1)">{{ index + 1 }}</div>
-                <div class="hot-info">
-                  <div class="hot-title">{{ item.title }}</div>
-                  <div class="hot-meta">
-                    <span>{{ item.source }}</span>
-                    <span>{{ item.viewCount }} 阅读</span>
+            <vue3-seamless-scroll
+              v-if="hotWebmedia.length > 0"
+              :list="hotWebmedia"
+              :class-option="scrollOption"
+              class="scroll-container"
+            >
+              <div class="hot-list">
+                <div
+                  v-for="(item, index) in hotWebmedia"
+                  :key="index"
+                  class="hot-item"
+                >
+                  <div class="hot-rank" :class="'rank-' + (index + 1)">{{ index + 1 }}</div>
+                  <div class="hot-info">
+                    <div class="hot-title">{{ item.title }}</div>
+                    <div class="hot-meta">
+                      <span>{{ item.source }}</span>
+                      <span>{{ item.viewCount }} 阅读</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </vue3-seamless-scroll>
           </el-card>
         </div>
 
@@ -221,24 +228,31 @@
                 </span>
               </div>
             </template>
-            <div class="hot-list">
-              <div
-                v-for="(topic, index) in hotTopics"
-                :key="index"
-                class="hot-item"
-              >
-                <div class="hot-rank" :class="'rank-' + (index + 1)">{{ index + 1 }}</div>
-                <div class="hot-info">
-                  <div class="hot-title">{{ topic.keyword }}</div>
-                  <div class="hot-meta">
-                    <span>{{ topic.count }} 条相关</span>
-                    <el-icon v-if="topic.trend === 'up'" color="#f56c6c" style="margin-left: 8px;">
-                      <CaretTop />
-                    </el-icon>
+            <vue3-seamless-scroll
+              v-if="hotTopics.length > 0"
+              :list="hotTopics"
+              :class-option="scrollOption"
+              class="scroll-container"
+            >
+              <div class="hot-list">
+                <div
+                  v-for="(topic, index) in hotTopics"
+                  :key="index"
+                  class="hot-item"
+                >
+                  <div class="hot-rank" :class="'rank-' + (index + 1)">{{ index + 1 }}</div>
+                  <div class="hot-info">
+                    <div class="hot-title">{{ topic.keyword }}</div>
+                    <div class="hot-meta">
+                      <span>{{ topic.count }} 条相关</span>
+                      <el-icon v-if="topic.trend === 'up'" color="#f56c6c" style="margin-left: 8px;">
+                        <CaretTop />
+                      </el-icon>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </vue3-seamless-scroll>
           </el-card>
         </div>
       </div>
@@ -266,6 +280,7 @@ import dayjs from 'dayjs'
 import * as echarts from 'echarts'
 import type { EChartsOption } from 'echarts'
 import 'echarts-wordcloud'
+import { Vue3SeamlessScroll } from 'vue3-seamless-scroll'
 
 const dataStore = useDataStore()
 
@@ -326,6 +341,19 @@ const weiboPeriod = ref('24h')
 // 热门内容
 const hotWebmedia = ref<Array<{ title: string; source: string; viewCount: number }>>([])
 const hotTopics = ref<Array<{ keyword: string; count: number; trend: 'up' | 'down' | 'stable' }>>([])
+
+// 滚动配置
+const scrollOption = computed(() => ({
+  step: 0.5,
+  limitMoveNum: 2,
+  hoverStop: true,
+  direction: 1,
+  openWatch: true,
+  singleHeight: 0,
+  waitTime: 1000
+}))
+const hotTopicsScroll = ref(true)
+const hotWebmediaScroll = ref(true)
 
 // 图表refs
 const webmediaTrendRef = ref()
@@ -1234,7 +1262,12 @@ onBeforeUnmount(() => {
       :deep(.el-card__body) {
         padding: 0;
         height: 100%;
-        overflow-y: auto;
+        overflow: hidden;
+      }
+
+      .scroll-container {
+        height: 100%;
+        overflow: hidden;
       }
 
       .hot-list {

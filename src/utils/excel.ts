@@ -1,8 +1,24 @@
+/**
+ * Excel 文件处理工具模块
+ *
+ * 提供 Excel 文件的解析、验证、数据转换和导出功能
+ * 支持网媒数据和微博数据的导入导出
+ */
+
 import * as XLSX from 'xlsx'
 import type { WebMediaData, WeiboData } from '@/types'
 import { generateId } from './index'
 
-// Excel文件解析
+// ============ Excel 解析 ============
+
+/**
+ * Excel 文件解析
+ *
+ * 读取 Excel 文件并转换为 JSON 对象数组
+ *
+ * @param file - Excel 文件对象
+ * @returns Promise<any[]> - 解析后的数据数组
+ */
 export const parseExcelFile = (file: File): Promise<any[]> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -39,7 +55,16 @@ export const parseExcelFile = (file: File): Promise<any[]> => {
   })
 }
 
-// 验证网媒数据格式
+// ============ 数据验证 ============
+
+/**
+ * 验证网媒数据格式
+ *
+ * 检查数据是否包含必填字段
+ *
+ * @param data - 待验证的数据数组
+ * @returns 验证结果对象，包含 valid 和 errors
+ */
 export const validateWebMediaData = (data: any[]): { valid: boolean; errors: string[] } => {
   const errors: string[] = []
   const requiredFields = ['title', 'content', 'source', 'publishTime']
@@ -63,7 +88,14 @@ export const validateWebMediaData = (data: any[]): { valid: boolean; errors: str
   }
 }
 
-// 验证微博数据格式
+/**
+ * 验证微博数据格式
+ *
+ * 检查数据是否包含必填字段
+ *
+ * @param data - 待验证的数据数组
+ * @returns 验证结果对象，包含 valid 和 errors
+ */
 export const validateWeiboData = (data: any[]): { valid: boolean; errors: string[] } => {
   const errors: string[] = []
   const requiredFields = ['content', 'userId', 'userName', 'publishTime']
@@ -87,7 +119,17 @@ export const validateWeiboData = (data: any[]): { valid: boolean; errors: string
   }
 }
 
-// 转换为网媒数据格式
+// ============ 数据转换 ============
+
+/**
+ * 转换为网媒数据格式
+ *
+ * 将 Excel 原始数据转换为标准的 WebMediaData 格式
+ * 自动映射中文列名到英文字段名
+ *
+ * @param rawData - Excel 原始数据数组
+ * @returns 网媒数据数组
+ */
 export const convertToWebMediaData = (rawData: any[]): WebMediaData[] => {
   console.log(rawData, 'rawData')
   return rawData.map(item => ({
@@ -106,7 +148,15 @@ export const convertToWebMediaData = (rawData: any[]): WebMediaData[] => {
   }))
 }
 
-// 转换为微博数据格式
+/**
+ * 转换为微博数据格式
+ *
+ * 将 Excel 原始数据转换为标准的 WeiboData 格式
+ * 自动映射中文列名到英文字段名，处理数组字段
+ *
+ * @param rawData - Excel 原始数据数组
+ * @returns 微博数据数组
+ */
 export const convertToWeiboData = (rawData: any[]): WeiboData[] => {
   return rawData.map(item => ({
     id: item.id || generateId('WB'),
@@ -124,7 +174,16 @@ export const convertToWeiboData = (rawData: any[]): WeiboData[] => {
   }))
 }
 
-// 导出为Excel
+// ============ Excel 导出 ============
+
+/**
+ * 导出为 Excel
+ *
+ * 将数据数组导出为 Excel 文件
+ *
+ * @param data - 要导出的数据数组
+ * @param filename - 导出的文件名
+ */
 export const exportToExcel = (data: any[], filename: string) => {
   const worksheet = XLSX.utils.json_to_sheet(data)
   const workbook = XLSX.utils.book_new()

@@ -1,3 +1,10 @@
+/**
+ * 数据管理 Store
+ *
+ * 管理网媒数据和微博数据的全局状态
+ * 提供数据的 CRUD 操作和统计功能
+ */
+
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { WebMediaData, WeiboData, DataStatistics } from '@/types'
@@ -5,20 +12,41 @@ import { dbHelper } from '@/db'
 import dayjs from 'dayjs'
 
 export const useDataStore = defineStore('data', () => {
-  // 状态
+  // ============ 状态定义 ============
+
+  /** 网媒数据列表 */
   const webmediaList = ref<WebMediaData[]>([])
+
+  /** 微博数据列表 */
   const weiboList = ref<WeiboData[]>([])
+
+  /** 加载状态 */
   const loading = ref(false)
+
+  /** 当前数据源过滤器 */
   const currentDataSource = ref<'all' | 'webmedia' | 'weibo'>('all')
 
+  // ============ 计算属性 ============
 
-  // 计算属性
+  /**
+   * 所有数据
+   *
+   * 根据当前数据源过滤器返回对应的数据
+   */
   const allData = computed(() => {
     if (currentDataSource.value === 'webmedia') return webmediaList.value
     if (currentDataSource.value === 'weibo') return weiboList.value
     return [...webmediaList.value, ...weiboList.value]
   })
 
+  /**
+   * 数据统计
+   *
+   * 计算各种统计指标，包括：
+   * - 总数、网媒数、微博数
+   * - 情感分布（正面/中性/负面）
+   * - 今日、昨日、本周数据量
+   */
   const statistics = computed<DataStatistics>(() => {
     const now = dayjs()
     const todayStart = now.startOf('day')
@@ -66,7 +94,13 @@ export const useDataStore = defineStore('data', () => {
     }
   })
 
-  // 方法
+  // ============ 方法 ============
+
+  /**
+   * 加载网媒数据
+   *
+   * 从数据库加载所有网媒数据到 store
+   */
   async function loadWebMediaData() {
     loading.value = true
     try {
@@ -79,6 +113,11 @@ export const useDataStore = defineStore('data', () => {
     }
   }
 
+  /**
+   * 加载微博数据
+   *
+   * 从数据库加载所有微博数据到 store
+   */
   async function loadWeiboData() {
     loading.value = true
     try {
@@ -91,10 +130,20 @@ export const useDataStore = defineStore('data', () => {
     }
   }
 
+  /**
+   * 加载所有数据
+   *
+   * 并行加载网媒数据和微博数据
+   */
   async function loadAllData() {
     await Promise.all([loadWebMediaData(), loadWeiboData()])
   }
 
+  /**
+   * 添加网媒数据
+   *
+   * @param data - 网媒数据数组
+   */
   async function addWebMediaData(data: WebMediaData[]) {
     try {
       await dbHelper.addWebMediaData(data)
@@ -105,6 +154,11 @@ export const useDataStore = defineStore('data', () => {
     }
   }
 
+  /**
+   * 添加微博数据
+   *
+   * @param data - 微博数据数组
+   */
   async function addWeiboData(data: WeiboData[]) {
     try {
       await dbHelper.addWeiboData(data)
@@ -115,6 +169,12 @@ export const useDataStore = defineStore('data', () => {
     }
   }
 
+  /**
+   * 更新网媒数据
+   *
+   * @param id - 网媒数据ID
+   * @param updates - 要更新的字段
+   */
   async function updateWebMediaData(id: string, updates: Partial<WebMediaData>) {
     try {
       await dbHelper.updateWebMediaData(id, updates)
@@ -125,6 +185,12 @@ export const useDataStore = defineStore('data', () => {
     }
   }
 
+  /**
+   * 更新微博数据
+   *
+   * @param id - 微博数据ID
+   * @param updates - 要更新的字段
+   */
   async function updateWeiboData(id: string, updates: Partial<WeiboData>) {
     try {
       await dbHelper.updateWeiboData(id, updates)
@@ -135,6 +201,11 @@ export const useDataStore = defineStore('data', () => {
     }
   }
 
+  /**
+   * 删除网媒数据
+   *
+   * @param id - 网媒数据ID
+   */
   async function deleteWebMediaData(id: string) {
     try {
       await dbHelper.deleteWebMediaData(id)
@@ -145,6 +216,11 @@ export const useDataStore = defineStore('data', () => {
     }
   }
 
+  /**
+   * 批量删除网媒数据
+   *
+   * @param ids - 网媒数据ID数组
+   */
   async function bulkDeleteWebMediaData(ids: string[]) {
     try {
       await dbHelper.bulkDeleteWebMediaData(ids)
@@ -155,6 +231,11 @@ export const useDataStore = defineStore('data', () => {
     }
   }
 
+  /**
+   * 删除微博数据
+   *
+   * @param id - 微博数据ID
+   */
   async function deleteWeiboData(id: string) {
     try {
       await dbHelper.deleteWeiboData(id)
@@ -165,6 +246,11 @@ export const useDataStore = defineStore('data', () => {
     }
   }
 
+  /**
+   * 批量删除微博数据
+   *
+   * @param ids - 微博数据ID数组
+   */
   async function bulkDeleteWeiboData(ids: string[]) {
     try {
       await dbHelper.bulkDeleteWeiboData(ids)
@@ -175,6 +261,11 @@ export const useDataStore = defineStore('data', () => {
     }
   }
 
+  /**
+   * 清空所有数据
+   *
+   * 清空网媒数据和微博数据
+   */
   async function clearAllData() {
     try {
       await dbHelper.clearWebMediaData()
@@ -187,6 +278,11 @@ export const useDataStore = defineStore('data', () => {
     }
   }
 
+  /**
+   * 设置数据源过滤器
+   *
+   * @param source - 数据源类型 'all' | 'webmedia' | 'weibo'
+   */
   function setDataSource(source: 'all' | 'webmedia' | 'weibo') {
     currentDataSource.value = source
   }

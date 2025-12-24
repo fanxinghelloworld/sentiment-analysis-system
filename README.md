@@ -541,6 +541,7 @@ Excel文件 → 文件解析 → 数据转换 → IndexedDB存储
 
 ## 项目访问地址
 - https://sentiment-analysis-system-sixi.vercel.app/
+- https://sentiment-analysis-system.pages.dev/
 
 
 

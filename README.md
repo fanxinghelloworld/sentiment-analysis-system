@@ -539,5 +539,8 @@ Excel文件 → 文件解析 → 数据转换 → IndexedDB存储
 ## github仓库
 - https://github.com/fanxinghelloworld/sentiment-analysis-system.git
 
+## 项目访问地址
+- https://sentiment-analysis-system-sixi.vercel.app/
+
 
 
